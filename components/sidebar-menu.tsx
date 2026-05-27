@@ -27,17 +27,17 @@ export function SidebarMenu() {
   }
 
   return (
-    <aside className="border-r border-slate-200 bg-[linear-gradient(to_bottom,#7BB662,#FFF347)] p-6 dark:border-slate-800 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:flex-shrink-0">
+    <aside className="border-r border-slate-200 bg-[#7BB662] p-6 dark:border-slate-800 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:flex-shrink-0">
       <div className="flex h-full flex-col justify-between">
         <div className="space-y-8">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-700">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
             Admin
           </p>
-          <p className="mt-3 text-2xl font-semibold text-slate-900">
+          <p className="mt-3 text-2xl font-semibold text-white">
             Jayden Brooks
           </p>
-          <p className="mt-1 text-sm text-slate-800">
+          <p className="mt-1 text-sm text-white">
             Site administrator
           </p>
         </div>
@@ -49,8 +49,8 @@ export function SidebarMenu() {
               href={item.href}
               className={`flex w-full items-center justify-between rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${
                 item.href === pathname
-                  ? "bg-white/40 text-slate-900 shadow-sm"
-                  : "text-slate-700 hover:bg-white/10"
+                  ? "bg-white/40 text-slate-900 shadow-sm" // Keeping text-slate-900 for active state for contrast against white/40 background
+                  : "text-white hover:bg-white/10"
               }`}
             >
               <span>{item.label}</span>
@@ -65,7 +65,7 @@ export function SidebarMenu() {
               await supabase.auth.signOut();
               router.push("/login");
             }}
-            className="flex w-full items-center rounded-3xl px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-white/10 focus:outline-none"
+            className="flex w-full items-center rounded-3xl px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-white/10 focus:outline-none"
           >
             Logout
           </button>
