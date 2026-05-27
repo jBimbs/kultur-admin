@@ -11,9 +11,9 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Historical Sites", href: "/historical-sites" },
-  { label: "Festivals", href: "/festivals" },
-  { label: "Artifacts", href: "/artifacts" },
+  { label: "Historical Sites", href: "/historical-sites/view-sites" },
+  { label: "Festivals", href: "/festivals/view-festivals" },
+  { label: "Artifacts", href: "/artifacts/view-artifacts" },
   { label: "Local Cuisines", href: "/local-cuisines" },
 ];
 
@@ -31,6 +31,9 @@ export function SidebarMenu() {
       <div className="flex h-full flex-col justify-between">
         <div className="space-y-8">
         <div>
+          <div className="mb-6">
+            <img src="/Logo.png" alt="KulturAR Logo" className="h-20 w-auto" />
+          </div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
             Admin
           </p>
@@ -38,7 +41,7 @@ export function SidebarMenu() {
             Jayden Brooks
           </p>
           <p className="mt-1 text-sm text-white">
-            Site administrator
+            KulturAR Administrator
           </p>
         </div>
 
@@ -63,7 +66,7 @@ export function SidebarMenu() {
           <button
             onClick={async () => {
               await supabase.auth.signOut();
-              router.push("/login");
+              router.push("/");
             }}
             className="flex w-full items-center rounded-3xl px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-white/10 focus:outline-none"
           >
