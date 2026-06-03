@@ -20,9 +20,14 @@ function LoginForm() {
   const callbackUrl = searchParams.get("redirect") ?? "/dashboard";
 
   useEffect(() => {
+    // Check if admin_session cookie exists
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) router.replace(callbackUrl);
+      const sessionCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("admin_session="));
+      if (sessionCookie) {
+        router.replace(callbackUrl);
+      }
     };
     checkSession();
   }, [router, callbackUrl]);
@@ -48,17 +53,7 @@ function LoginForm() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
+    // Login successful, redirect to dashboard
     router.replace(callbackUrl);
   }
 

@@ -3,16 +3,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
 
 type Site = {
@@ -31,7 +23,7 @@ export default function HistoricalSitesPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const pageSize = 5;
+  const pageSize = 6;
   const [totalCount, setTotalCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -147,40 +139,41 @@ export default function HistoricalSitesPage() {
           <div className="text-center py-8 text-slate-600">No sites found.</div>
         ) : (
           <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>City</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sites.map((s) => (
-                  <TableRow key={s.id || s.name}>
-                    <TableCell>
-                      {s.image_url ? (
-                        <img
-                          src={s.image_url}
-                          alt={s.name || "site image"}
-                          className="h-16 w-32 rounded object-cover"
-                        />
-                      ) : (
-                        <div className="h-16 w-32 rounded bg-slate-100 dark:bg-slate-800" />
-                      )}
-                    </TableCell>
-                    <TableCell>{s.Category}</TableCell>
-                    <TableCell className="max-w-xs truncate">{s.name}</TableCell>
-                    <TableCell className="max-w-2xl truncate">{s.description}</TableCell>
-                    <TableCell>{s.city}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {sites.map((site) => (
+                <Card key={site.id || site.name} className="border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden hover:shadow-md transition">
+                  <div className="w-full h-40 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    {site.image_url ? (
+                      <img
+                        src={site.image_url}
+                        alt={site.name || "site image"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800" />
+                    )}
+                  </div>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{site.name || "Unnamed Site"}</CardTitle>
+                        <CardDescription>{site.Category || "No category"}</CardDescription>
+                      </div>
+                      <div className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                        {site.city || "Unknown"}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                      {site.description || "No description available"}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-            <div className="mt-4 grid grid-cols-3 items-center">
+            <div className="mt-8 grid grid-cols-3 items-center gap-4">
               <div className="text-sm text-slate-600">
                 Showing {(page * pageSize) + 1} - {Math.min((page + 1) * pageSize, totalCount ?? 0)} of {totalCount ?? "?"}
               </div>

@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
 
 type NavItem = {
   label: string;
   href: string;
+};
+
+type AdminSession = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  city?: string;
 };
 
 const navItems: NavItem[] = [
@@ -20,9 +28,25 @@ const navItems: NavItem[] = [
 export function SidebarMenu() {
   const pathname = usePathname();
   const router = useRouter();
+  const [admin, setAdmin] = useState<AdminSession | null>(null);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const res = await fetch("/api/session");
+        if (res.ok) {
+          const data = await res.json();
+          setAdmin(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch admin session:", error);
+      }
+    };
+    fetchAdmin();
+  }, []);
 
   // Hide the sidebar on auth pages
-  if (pathname === "/login" || pathname === "/register") {
+  if (pathname === "/" || pathname === "/register") {
     return null;
   }
 
@@ -38,7 +62,7 @@ export function SidebarMenu() {
             Admin
           </p>
           <p className="mt-3 text-2xl font-semibold text-white">
-            Jayden Brooks
+            {admin ? `${admin.first_name} ${admin.last_name}` : "Loading..."}
           </p>
           <p className="mt-1 text-sm text-white">
             KulturAR Administrator
@@ -52,7 +76,7 @@ export function SidebarMenu() {
               href={item.href}
               className={`flex w-full items-center justify-between rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${
                 item.href === pathname
-                  ? "bg-white/40 text-slate-900 shadow-sm" // Keeping text-slate-900 for active state for contrast against white/40 background
+                  ? "bg-white/40 text-slate-900 shadow-sm"
                   : "text-white hover:bg-white/10"
               }`}
             >
@@ -65,7 +89,7 @@ export function SidebarMenu() {
         <div className="mt-auto">
           <button
             onClick={async () => {
-              await supabase.auth.signOut();
+              await fetch("/api/logout", { method: "POST" });
               router.push("/");
             }}
             className="flex w-full items-center rounded-3xl px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-white/10 focus:outline-none"

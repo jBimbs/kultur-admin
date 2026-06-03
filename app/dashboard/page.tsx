@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/logout-button";
 import {
   Card,
   CardHeader,
@@ -258,7 +259,10 @@ export default async function AdminDashboard() {
             Monitor new user signups, active accounts, and user creation trends by day, week, month, and year.
           </p>
         </div>
-        <Button className="w-full sm:w-auto">Export report</Button>
+        <div className="flex gap-2">
+          <Button className="w-full sm:w-auto">Export report</Button>
+          <LogoutButton />
+        </div>
       </section>
 
       {fetchError ? (
