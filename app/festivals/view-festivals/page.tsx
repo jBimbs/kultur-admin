@@ -82,7 +82,7 @@ export default function FestivalsPage() {
             <Link href="/festivals/add-festival">
               <Button>Add Festival</Button>
             </Link>
-            <Link href="/">
+            <Link href="/dashboard">
               <Button variant="outline">Back to dashboard</Button>
             </Link>
           </div>

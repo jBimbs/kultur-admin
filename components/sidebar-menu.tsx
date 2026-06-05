@@ -22,7 +22,9 @@ const navItems: NavItem[] = [
   { label: "Historical Sites", href: "/historical-sites/view-sites" },
   { label: "Festivals", href: "/festivals/view-festivals" },
   { label: "Artifacts", href: "/artifacts/view-artifacts" },
-  { label: "Local Cuisines", href: "/local-cuisines" },
+  { label: "Local Cuisines", href: "/local-cuisines/view-local-cuisines" },
+  { label: "Admin", href: "/admin/view-admin" },
+  { label: "Profile", href: "/profile/view-profile" },
 ];
 
 export function SidebarMenu() {
@@ -65,7 +67,7 @@ export function SidebarMenu() {
             {admin ? `${admin.first_name} ${admin.last_name}` : "Loading..."}
           </p>
           <p className="mt-1 text-sm text-white">
-            KulturAR Administrator
+            {admin ? `${admin.city}` : "Loading..."} City Administrator
           </p>
         </div>
 
@@ -76,7 +78,7 @@ export function SidebarMenu() {
               href={item.href}
               className={`flex w-full items-center justify-between rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${
                 item.href === pathname
-                  ? "bg-white/40 text-slate-900 shadow-sm"
+                  ? "text-white bg-white/40 text-slate-900 shadow-sm"
                   : "text-white hover:bg-white/10"
               }`}
             >

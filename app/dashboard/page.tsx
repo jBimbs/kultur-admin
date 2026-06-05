@@ -204,7 +204,7 @@ export default async function AdminDashboard() {
     {
       label: "Total users",
       value: totalUsers.toString(),
-      description: "All registered auth users in your Supabase project",
+      description: "All registered auth users in your Database",
     },
     {
       label: "Filipino",
@@ -267,7 +267,7 @@ export default async function AdminDashboard() {
 
       {fetchError ? (
         <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200">
-          <p className="font-semibold">Unable to load Supabase user data</p>
+          <p className="font-semibold">Unable to load Database user data</p>
           <p>{fetchError}</p>
           <p className="mt-2 text-xs text-rose-700 dark:text-rose-300">
             Make sure your `SUPABASE_SERVICE_ROLE_KEY` is the correct service role key.
@@ -327,7 +327,7 @@ export default async function AdminDashboard() {
         <Card className="border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Quick insight</CardTitle>
-            <CardDescription>Based on Supabase auth users.</CardDescription>
+            <CardDescription>Based on Database auth users.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -344,7 +344,7 @@ export default async function AdminDashboard() {
             </div>
           </CardContent>
           <CardFooter>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Data is loaded securely on the server using your Supabase service role key.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Data is loaded securely on the server.</p>
           </CardFooter>
         </Card>
       </section>
@@ -380,7 +380,7 @@ export default async function AdminDashboard() {
             </TableBody>
           </Table>
           <CardFooter>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Loaded from Supabase Auth user records.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Loaded from database user records.</p>
           </CardFooter>
         </Card>
       </section>

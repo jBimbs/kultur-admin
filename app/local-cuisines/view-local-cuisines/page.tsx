@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardHeader,
@@ -13,27 +14,29 @@ import {
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 
-type Artifact = {
+type Cuisine = {
   id: number;
   name?: string | null;
   description?: string | null;
+  city_origin?: string | null;
   image_url?: string | null;
-  current_location?: string | null;
 };
 
-export default function ArtifactsPage() {
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+export default function LocalCuisinesPage() {
+  const [cuisines, setCuisines] = useState<Cuisine[]>([]);
+  const [filteredCuisines, setFilteredCuisines] = useState<Cuisine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const pageSize = 6;
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadArtifacts() {
+    async function loadCuisines() {
       setLoading(true);
       setError(null);
 
@@ -41,8 +44,8 @@ export default function ArtifactsPage() {
       const end = start + pageSize - 1;
 
       const { data, error: fetchError } = await supabase
-        .from("artifacts")
-        .select("id, name, description, image_url, current_location")
+        .from("cuisines")
+        .select("id, name, description, city_origin, image_url")
         .range(start, end)
         .order("id", { ascending: false });
 
@@ -50,13 +53,13 @@ export default function ArtifactsPage() {
 
       if (fetchError) {
         setError(fetchError.message);
-        setArtifacts([]);
+        setCuisines([]);
       } else {
-        setArtifacts((data as Artifact[]) || []);
+        setCuisines((data as Cuisine[]) || []);
       }
 
       const { count, error: countError } = await supabase
-        .from("artifacts")
+        .from("local_cuisines")
         .select("id", { head: true, count: "exact" });
 
       if (mounted) {
@@ -67,11 +70,32 @@ export default function ArtifactsPage() {
       setLoading(false);
     }
 
-    loadArtifacts();
+    loadCuisines();
     return () => {
       mounted = false;
     };
   }, [page]);
+
+  // Filter cuisines based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredCuisines(cuisines);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = cuisines.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(query) ||
+          c.description?.toLowerCase().includes(query) ||
+          c.city_origin?.toLowerCase().includes(query)
+      );
+      setFilteredCuisines(filtered);
+    }
+  }, [searchQuery, cuisines]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(0); // Reset to first page when searching
+  };
 
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
@@ -81,18 +105,18 @@ export default function ArtifactsPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-              Artifacts
+              Local Cuisines
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Artifact catalog management
+              Local cuisine management
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Showcase artifact records and maintain the inventory of cultural objects from your backend.
+              Maintain food and cuisine records for local dishes, ingredients, and restaurant recommendations.
             </p>
           </div>
           <div className="flex gap-2">
-            <Link href="/artifacts/add-artifact">
-              <Button>Add Artifact</Button>
+            <Link href="/local-cuisines/add-local-cuisines">
+              <Button>Add Cuisine</Button>
             </Link>
             <Link href="/dashboard">
               <Button variant="outline">Back to dashboard</Button>
@@ -100,64 +124,75 @@ export default function ArtifactsPage() {
           </div>
         </div>
 
+        <div className="mb-6">
+          <Input
+            placeholder="Search cuisines by name, description, or city..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="rounded-2xl"
+          />
+        </div>
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <div className="col-span-full py-8 text-center">Loading artifacts…</div>
+            <div className="col-span-full py-8 text-center">Loading cuisines…</div>
           ) : error ? (
             <div className="col-span-full py-8 text-center text-rose-600">{error}</div>
-          ) : artifacts.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-slate-600">No artifacts found.</div>
+          ) : filteredCuisines.length === 0 ? (
+            <div className="col-span-full py-8 text-center text-slate-600">
+              {searchQuery ? "No cuisines match your search." : "No cuisines found."}
+            </div>
           ) : (
-            artifacts.map((a) => (
-              <Card key={a.id} className="overflow-hidden">
-                {a.image_url ? (
-                  <img src={a.image_url} alt={a.name || "artifact image"} className="h-40 w-full object-cover" />
+            filteredCuisines.map((c) => (
+              <Card key={c.id} className="overflow-hidden">
+                {c.image_url ? (
+                  <img src={c.image_url} alt={c.name || "cuisine image"} className="h-40 w-full object-cover" />
                 ) : (
                   <div className="h-40 w-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs">No Image</div>
                 )}
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="truncate">{a.name}</CardTitle>
-                    <span className="text-xs font-mono text-slate-400">#{a.id}</span>
+                    <CardTitle className="truncate">{c.name}</CardTitle>
+                    <span className="text-xs font-mono text-slate-400">#{c.id}</span>
                   </div>
-                  <CardDescription>{a.current_location}</CardDescription>
+                  <CardDescription>{c.city_origin}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="line-clamp-3 text-sm text-slate-600 dark:text-slate-400">{a.description}</p>
+                  <p className="line-clamp-3 text-sm text-slate-600 dark:text-slate-400">{c.description}</p>
                 </CardContent>
                 <CardFooter className="flex items-center justify-between gap-2">
                   <div className="flex gap-2">
-                    <Link href={`/artifacts/edit/${a.id}`}>
+                    <Link href={`/local-cuisines/edit-local-cuisines/${c.id}`}>
                       <Button size="sm">Edit</Button>
                     </Link>
                     <Button
                       size="sm"
                       variant="destructive"
                       onClick={async () => {
-                        if (!confirm("Delete this artifact?")) return;
+                        if (!confirm("Delete this cuisine?")) return;
                         try {
-                          setDeletingId(a.id);
-                          const res = await fetch("/api/artifacts/delete-artifact", {
+                          setDeletingId(c.id);
+                          const res = await fetch("/api/local-cuisines/delete-cuisine", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: a.id }),
+                            body: JSON.stringify({ id: c.id }),
                           });
                           const body = await res.json();
                           if (!res.ok || body.error) {
-                            alert(body.error || "Failed to delete artifact");
+                            alert(body.error || "Failed to delete cuisine");
                           } else {
-                            setArtifacts((prev) => prev.filter((item) => item.id !== a.id));
+                            setCuisines((prev) => prev.filter((item) => item.id !== c.id));
                             setTotalCount((c) => (c && c > 0 ? c - 1 : c));
                           }
                         } catch (e) {
-                          alert("Unexpected error deleting artifact");
+                          alert("Unexpected error deleting cuisine");
                         } finally {
                           setDeletingId(null);
                         }
                       }}
                       disabled={deletingId !== null}
                     >
-                      {deletingId === a.id ? "Deleting…" : "Delete"}
+                      {deletingId === c.id ? "Deleting…" : "Delete"}
                     </Button>
                   </div>
                 </CardFooter>
@@ -167,18 +202,27 @@ export default function ArtifactsPage() {
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-3">
-          <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0}>
-            Previous
-          </Button>
-          <div className="text-sm text-slate-600">
-            Page {page + 1} of {totalPages || 1}
-          </div>
-          <Button
-            onClick={() => setPage((p) => Math.min((totalPages || 1) - 1, p + 1))}
-            disabled={totalCount === null || page >= (totalPages - 1)}
-          >
-            Next
-          </Button>
+          {!searchQuery && (
+            <>
+              <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0}>
+                Previous
+              </Button>
+              <div className="text-sm text-slate-600">
+                Page {page + 1} of {totalPages || 1}
+              </div>
+              <Button
+                onClick={() => setPage((p) => Math.min((totalPages || 1) - 1, p + 1))}
+                disabled={totalCount === null || page >= (totalPages - 1)}
+              >
+                Next
+              </Button>
+            </>
+          )}
+          {searchQuery && (
+            <div className="text-sm text-slate-600">
+              Found {filteredCuisines.length} result{filteredCuisines.length !== 1 ? "s" : ""}
+            </div>
+          )}
         </div>
       </div>
     </div>
