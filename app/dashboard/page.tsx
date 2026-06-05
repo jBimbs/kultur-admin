@@ -18,6 +18,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { PieChartFilter } from "@/components/pie-chart-filter";
+import { ActiveUsersBarChart } from "@/components/active-users-bar-chart";
 
 type SupabaseAuthUser = {
   id: string;
@@ -191,7 +192,9 @@ export default async function AdminDashboard() {
   ].filter((d) => d.value > 0);
 
   const foreignersCount = users.filter((u) => u.user_metadata?.origin_type === "Foreigner").length;
-  const filipinoCount = users.filter((u) => u.user_metadata?.origin_type === "Filipino" || u.user_metadata?.origin_type === "Local").length;
+  const filipinoCount = users.filter(
+    (u) => u.user_metadata?.origin_type === "Filipino" || u.user_metadata?.origin_type === "Local"
+  ).length;
   const unknownOriginCount = Math.max(0, totalUsers - foreignersCount - filipinoCount);
 
   const originPieData = [
@@ -261,7 +264,7 @@ export default async function AdminDashboard() {
         </div>
         <div className="flex gap-2">
           <Button className="w-full sm:w-auto">Export report</Button>
-          <LogoutButton />
+          {/* <LogoutButton /> */}
         </div>
       </section>
 
@@ -275,11 +278,22 @@ export default async function AdminDashboard() {
         </div>
       ) : null}
 
-      <PieChartFilter 
-        createdPieData={createdPieData} 
-        activePieData={activePieData} 
-        originPieData={originPieData}
-      />
+      <PieChartFilter createdPieData={createdPieData} activePieData={activePieData} />
+
+      <Card className="border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <CardHeader>
+          <CardTitle>Active users by timeframe</CardTitle>
+          <CardDescription>Number of active accounts for each timeframe bucket.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActiveUsersBarChart
+            activeToday={activeToday}
+            activeThisWeek={activeThisWeek}
+            activeThisMonth={activeThisMonth}
+            activeThisYear={activeThisYear}
+          />
+        </CardContent>
+      </Card>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {stats.map((stat) => (
@@ -372,8 +386,12 @@ export default async function AdminDashboard() {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.email ?? "-"}</TableCell>
-                  <TableCell>{user.created_at ? new Date(user.created_at).toLocaleString() : "-"}</TableCell>
-                  <TableCell>{user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : "Never"}</TableCell>
+                  <TableCell>
+                    {user.created_at ? new Date(user.created_at).toLocaleString() : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : "Never"}
+                  </TableCell>
                   <TableCell>{user.last_sign_in_at ? "Active" : "Inactive"}</TableCell>
                 </TableRow>
               ))}
@@ -387,3 +405,4 @@ export default async function AdminDashboard() {
     </div>
   );
 }
+

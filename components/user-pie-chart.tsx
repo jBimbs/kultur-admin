@@ -32,11 +32,11 @@ export function UserPieChart({ data }: { data: ChartData[] }) {
 
     return (
       <g>
-        <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="central" fill="#000" fontSize={18} fontWeight={700}>
-          100%
-        </text>
-        <text x={cx} y={cy + 14} textAnchor="middle" dominantBaseline="central" fill="#475569" fontSize={12}>
+        <text x={cx} y={cy + 4} textAnchor="middle" dominantBaseline="central" fill="#475569" fontSize={12}>
           {totalValue}
+        </text>
+        <text x={cx} y={cy + 22} textAnchor="middle" dominantBaseline="central" fill="#000" fontSize={18} fontWeight={700}>
+          100%
         </text>
       </g>
     );

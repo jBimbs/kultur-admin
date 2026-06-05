@@ -7,7 +7,9 @@ import { useEffect, useState } from "react";
 type NavItem = {
   label: string;
   href: string;
+  iconSrc: string;
 };
+
 
 type AdminSession = {
   id: string;
@@ -18,14 +20,23 @@ type AdminSession = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Historical Sites", href: "/historical-sites/view-sites" },
-  { label: "Festivals", href: "/festivals/view-festivals" },
-  { label: "Artifacts", href: "/artifacts/view-artifacts" },
-  { label: "Local Cuisines", href: "/local-cuisines/view-local-cuisines" },
-  { label: "Admin", href: "/admin/view-admin" },
-  { label: "Profile", href: "/profile/view-profile" },
+  { label: "Dashboard", href: "/dashboard", iconSrc: "/dashboard.png" },
+  {
+    label: "Historical Sites",
+    href: "/historical-sites/view-sites",
+    iconSrc: "/sites.png",
+  },
+  { label: "Festivals", href: "/festivals/view-festivals", iconSrc: "/festivals.png" },
+  { label: "Artifacts", href: "/artifacts/view-artifacts", iconSrc: "/artifacts.png" },
+  {
+    label: "Local Cuisines",
+    href: "/local-cuisines/view-local-cuisines",
+    iconSrc: "/cuisines.png",
+  },
+  { label: "Admin", href: "/admin/view-admin", iconSrc: "/admin.png" },
+  { label: "Profile", href: "/profile/view-profile", iconSrc: "/profile.png" },
 ];
+
 
 export function SidebarMenu() {
   const pathname = usePathname();
@@ -76,13 +87,20 @@ export function SidebarMenu() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex w-full items-center justify-between rounded-3xl px-4 py-3 text-left text-sm font-medium transition ${
+              className={`flex w-full items-center justify-between rounded-3xl px-4 py-3 text-left text-lg font-medium transition ${
                 item.href === pathname
                   ? "text-white bg-white/40 text-slate-900 shadow-sm"
                   : "text-white hover:bg-white/10"
               }`}
             >
-              <span>{item.label}</span>
+              <div className="flex items-center gap-3">
+                <img
+                  src={item.iconSrc}
+                  alt=""
+                  className="h-8 w-8"
+                />
+                <span>{item.label}</span>
+              </div>
             </Link>
           ))}
         </nav>
@@ -94,8 +112,9 @@ export function SidebarMenu() {
               await fetch("/api/logout", { method: "POST" });
               router.push("/");
             }}
-            className="flex w-full items-center rounded-3xl px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-white/10 focus:outline-none"
+            className="flex w-full items-center gap-3 rounded-3xl px-4 py-3 text-left text-lg font-medium text-white transition hover:bg-white/10 focus:outline-none"
           >
+            <img src="/log-out.png" alt="" className="h-8 w-8" />
             Logout
           </button>
         </div>

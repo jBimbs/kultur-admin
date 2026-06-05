@@ -60,11 +60,20 @@ function LoginForm() {
   return (
     <div className="mx-auto flex min-h-[80vh] max-w-md items-center justify-center p-4">
       <Card className="w-full rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+        <CardHeader className="space-y-3">
+          <div className="flex items-center justify-center">
+            {/* Image shown above the title */}
+            <img
+              src="/Logo.png"
+              alt="Admin login logo"
+              className="h-16 w-16 object-contain"
+              draggable={false}
+            />
+          </div>
+          <CardTitle className="text-2xl text-center font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Admin Login
           </CardTitle>
-          <CardDescription className="text-slate-600 dark:text-slate-400">
+          <CardDescription className="text-slate-600 text-center dark:text-slate-400">
             Enter your credentials to access the KulturAR dashboard.
           </CardDescription>
         </CardHeader>
@@ -106,16 +115,20 @@ function LoginForm() {
               </div>
             ) : null}
 
-            <Button type="submit" className="w-full rounded-2xl" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full rounded-2xl bg-[linear-gradient(90deg,#7BB662_11%,#FFF347_100%)]"
+              disabled={loading}
+            >
               {loading ? "Signing in..." : "Sign in"}
             </Button>
 
-            <div className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
+            {/* <div className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
               Need an account?{" "}
               <Link href="/register" className="font-medium text-slate-900 hover:underline dark:text-slate-100">
                 Register here
               </Link>
-            </div>
+            </div> */}
           </form>
         </CardContent>
       </Card>
