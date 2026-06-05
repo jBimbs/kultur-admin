@@ -16,11 +16,9 @@ type AdminRow = {
 };
 
 export default async function ViewProfilePage() {
-  // Use the existing API route that already reads the `admin_session` cookie
-  // and returns the logged-in admin.
+  // Use the existing API route that reads the `admin_session` cookie.
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/session`, {
-    // keep server-side
     cache: "no-store",
   });
 
@@ -52,7 +50,7 @@ export default async function ViewProfilePage() {
             </div>
             <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               {admin.first_name} {admin.last_name}
-              {admin.suffix ? ` ${admin.suffix}` : ""}
+              {admin.suffix != null ? ` ${admin.suffix}` : ""}
             </div>
           </div>
 
@@ -83,8 +81,6 @@ export default async function ViewProfilePage() {
             </div>
           </div>
         </div>
-
-        {/* Requirement: show suffix only if not null */}
       </section>
     </div>
   );

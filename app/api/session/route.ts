@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     // Fetch full admin data from database
     const { data, error } = await supabaseAdmin
       .from("admin")
-      .select("id, email, first_name, last_name, city")
+      .select("id, email, first_name, last_name, suffix, city, password")
       .eq("id", session.id)
       .single();
 

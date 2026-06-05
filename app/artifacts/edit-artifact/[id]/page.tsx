@@ -3,12 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import {
   Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 
 type Artifact = {
@@ -19,27 +23,30 @@ type Artifact = {
   current_location?: string | null;
 };
 
-export default function EditArtifactPage() {
+export default function EditArtifactByIdPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
-  const params = useSearchParams();
-  const idParam = params.get("id");
+  const searchParams = useSearchParams();
 
-  const id = useMemo(() => {
-    if (!idParam) return NaN;
-    const n = Number(idParam);
-    return Number.isNaN(n) ? NaN : n;
-  }, [idParam]);
+  const [loaded, setLoaded] = useState(false);
+  const [artifactId, setArtifactId] = useState<number>(NaN);
+
+  // fallback in case params isn't available in this environment
+  const idParamFromQuery = useMemo(() => searchParams.get("id"), [searchParams]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Editable fields
+  const [artifact, setArtifact] = useState<Artifact | null>(null);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [currentLocation, setCurrentLocation] = useState("");
 
-  // Image handling
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -47,8 +54,39 @@ export default function EditArtifactPage() {
   useEffect(() => {
     let mounted = true;
 
+    async function init() {
+      let idNumber = NaN;
+
+      try {
+        const resolved = await params;
+        idNumber = Number(resolved.id);
+      } catch {
+        // ignore
+      }
+
+      if (Number.isNaN(idNumber) && idParamFromQuery) {
+        const n = Number(idParamFromQuery);
+        if (!Number.isNaN(n)) idNumber = n;
+      }
+
+      if (!mounted) return;
+      setArtifactId(idNumber);
+      setLoaded(true);
+    }
+
+    init();
+    return () => {
+      mounted = false;
+    };
+  }, [idParamFromQuery, params]);
+
+  useEffect(() => {
+    let mounted = true;
+
     async function loadArtifact() {
-      if (!id || Number.isNaN(id)) {
+      if (!loaded) return;
+
+      if (!artifactId || Number.isNaN(artifactId)) {
         setError("Invalid artifact id.");
         setLoading(false);
         return;
@@ -58,25 +96,24 @@ export default function EditArtifactPage() {
       setError(null);
 
       try {
-        // Fetch data from the endpoint we will create below
-        const res = await fetch(`/api/artifacts/get?id=${id}`);
-        const data = await res.json();
+        // Load existing artifact details for pre-filling.
+        const res = await fetch(`/api/artifacts/get/${artifactId}`);
+        const body = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to load artifact details.");
+        if (!res.ok || body?.error) {
+          throw new Error(body?.error || "Failed to load artifact details");
         }
 
-        if (mounted && data.artifact) {
-          const art: Artifact = data.artifact;
-          // Populate state with existing database data
-          setName(art.name || "");
-          setDescription(art.description || "");
-          setCurrentLocation(art.current_location || "");
-          setExistingImageUrl(art.image_url || null);
-        }
+        if (!mounted) return;
+        const a: Artifact = body.artifact;
+        setArtifact(a);
+        setName(a.name || "");
+        setDescription(a.description || "");
+        setCurrentLocation(a.current_location || "");
+        setExistingImageUrl(a.image_url || null);
       } catch (e) {
         if (!mounted) return;
-        setError(e instanceof Error ? e.message : "Could not load artifact.");
+        setError(e instanceof Error ? e.message : "Failed to load artifact");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -87,7 +124,7 @@ export default function EditArtifactPage() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [artifactId, loaded]);
 
   const onPickImage = (file: File | null) => {
     setError(null);
@@ -113,10 +150,12 @@ export default function EditArtifactPage() {
   const handleSubmit = async () => {
     setError(null);
     if (!name.trim()) return setError("Name is required"), undefined;
-    if (!description.trim()) return setError("Description is required"), undefined;
-    if (!currentLocation.trim()) return setError("Current location is required"), undefined;
+    if (!description.trim())
+      return setError("Description is required"), undefined;
+    if (!currentLocation.trim())
+      return setError("Current location is required"), undefined;
 
-    if (!id || Number.isNaN(id)) {
+    if (!artifactId || Number.isNaN(artifactId)) {
       setError("Invalid artifact id.");
       return;
     }
@@ -124,7 +163,7 @@ export default function EditArtifactPage() {
     setSaving(true);
     try {
       const formData = new FormData();
-      formData.append("id", String(id));
+      formData.append("id", String(artifactId));
       formData.append("name", name.trim());
       formData.append("description", description.trim());
       formData.append("current_location", currentLocation.trim());
@@ -222,8 +261,8 @@ export default function EditArtifactPage() {
                     onChange={(e) => onPickImage(e.target.files?.[0] || null)}
                   />
                   <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Uploads to Supabase storage bucket <span className="font-semibold">KulturAR-assets</span> inside folder <span className="font-semibold">ARTIFACTS</span>.
-                    Max 5MB.
+                    Uploads to Supabase storage bucket <span className="font-semibold">KulturAR-assets</span> inside folder{" "}
+                    <span className="font-semibold">ARTIFACTS</span>. Max 5MB.
                   </div>
                 </div>
               </div>
@@ -232,14 +271,25 @@ export default function EditArtifactPage() {
 
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="artifact-name">
+              <label
+                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                htmlFor="artifact-name"
+              >
                 Artifact name
               </label>
-              <Input id="artifact-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Artifact name" />
+              <Input
+                id="artifact-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Artifact name"
+              />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="artifact-location">
+              <label
+                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                htmlFor="artifact-location"
+              >
                 Current location
               </label>
               <Input
@@ -252,7 +302,10 @@ export default function EditArtifactPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="artifact-description">
+            <label
+              className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              htmlFor="artifact-description"
+            >
               Description
             </label>
             <textarea
@@ -281,3 +334,4 @@ export default function EditArtifactPage() {
     </div>
   );
 }
+

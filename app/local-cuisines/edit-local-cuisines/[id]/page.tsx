@@ -3,43 +3,50 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import {
   Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
 } from "@/components/ui/card";
+import { useParams } from "next/navigation";
 
-type Artifact = {
+type Cuisine = {
   id: number;
   name?: string | null;
   description?: string | null;
+  city_origin?: string | null;
   image_url?: string | null;
-  current_location?: string | null;
 };
 
-export default function EditArtifactPage() {
+export default function EditLocalCuisineByIdPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
-  const params = useSearchParams();
-  const idParam = params.get("id");
+  const searchParams = useSearchParams();
 
-  const id = useMemo(() => {
-    if (!idParam) return NaN;
-    const n = Number(idParam);
-    return Number.isNaN(n) ? NaN : n;
-  }, [idParam]);
+  const idParamFromQuery = useMemo(
+    () => searchParams.get("id"),
+    [searchParams]
+  );
+
+  const [loaded, setLoaded] = useState(false);
+  const [cuisineId, setCuisineId] = useState<number>(NaN);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Editable fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [currentLocation, setCurrentLocation] = useState("");
+  const [cityOrigin, setCityOrigin] = useState("");
 
-  // Image handling
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -47,9 +54,40 @@ export default function EditArtifactPage() {
   useEffect(() => {
     let mounted = true;
 
-    async function loadArtifact() {
-      if (!id || Number.isNaN(id)) {
-        setError("Invalid artifact id.");
+    async function init() {
+      let idNumber = NaN;
+
+      try {
+        const resolved = await params;
+        idNumber = Number(resolved.id);
+      } catch {
+        // ignore
+      }
+
+      if (Number.isNaN(idNumber) && idParamFromQuery) {
+        const n = Number(idParamFromQuery);
+        if (!Number.isNaN(n)) idNumber = n;
+      }
+
+      if (!mounted) return;
+      setCuisineId(idNumber);
+      setLoaded(true);
+    }
+
+    init();
+    return () => {
+      mounted = false;
+    };
+  }, [idParamFromQuery, params]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCuisine() {
+      if (!loaded) return;
+
+      if (!cuisineId || Number.isNaN(cuisineId)) {
+        setError("Invalid cuisine id.");
         setLoading(false);
         return;
       }
@@ -58,36 +96,33 @@ export default function EditArtifactPage() {
       setError(null);
 
       try {
-        // Fetch data from the endpoint we will create below
-        const res = await fetch(`/api/artifacts/get?id=${id}`);
-        const data = await res.json();
+        const res = await fetch(`/api/local-cuisines/get/${cuisineId}`);
+        const body = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to load artifact details.");
+        if (!res.ok || body?.error) {
+          throw new Error(body?.error || "Failed to load cuisine details");
         }
 
-        if (mounted && data.artifact) {
-          const art: Artifact = data.artifact;
-          // Populate state with existing database data
-          setName(art.name || "");
-          setDescription(art.description || "");
-          setCurrentLocation(art.current_location || "");
-          setExistingImageUrl(art.image_url || null);
-        }
+        if (!mounted) return;
+        const c: Cuisine = body.cuisine;
+        setName(c.name || "");
+        setDescription(c.description || "");
+        setCityOrigin(c.city_origin || "");
+        setExistingImageUrl(c.image_url || null);
       } catch (e) {
         if (!mounted) return;
-        setError(e instanceof Error ? e.message : "Could not load artifact.");
+        setError(e instanceof Error ? e.message : "Failed to load cuisine");
       } finally {
         if (mounted) setLoading(false);
       }
     }
 
-    loadArtifact();
+    loadCuisine();
 
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [cuisineId, loaded]);
 
   const onPickImage = (file: File | null) => {
     setError(null);
@@ -112,35 +147,38 @@ export default function EditArtifactPage() {
 
   const handleSubmit = async () => {
     setError(null);
-    if (!name.trim()) return setError("Name is required"), undefined;
-    if (!description.trim()) return setError("Description is required"), undefined;
-    if (!currentLocation.trim()) return setError("Current location is required"), undefined;
 
-    if (!id || Number.isNaN(id)) {
-      setError("Invalid artifact id.");
+    if (!name.trim()) return setError("Name is required"), undefined;
+    if (!description.trim())
+      return setError("Description is required"), undefined;
+    if (!cityOrigin.trim())
+      return setError("City origin is required"), undefined;
+
+    if (!cuisineId || Number.isNaN(cuisineId)) {
+      setError("Invalid cuisine id.");
       return;
     }
 
     setSaving(true);
     try {
       const formData = new FormData();
-      formData.append("id", String(id));
+      formData.append("id", String(cuisineId));
       formData.append("name", name.trim());
       formData.append("description", description.trim());
-      formData.append("current_location", currentLocation.trim());
+      formData.append("city_origin", cityOrigin.trim());
       if (imageFile) formData.append("image", imageFile);
 
-      const res = await fetch("/api/artifacts/update-artifact", {
+      const res = await fetch("/api/local-cuisines/update-cuisine", {
         method: "POST",
         body: formData,
       });
 
       const body = await res.json();
       if (!res.ok || body.error) {
-        throw new Error(body.error || "Failed to update artifact");
+        throw new Error(body.error || "Failed to update cuisine");
       }
 
-      router.push("/artifacts/view-artifacts");
+      router.push("/local-cuisines/view-local-cuisines");
     } catch (e) {
       setError(e instanceof Error ? e.message : "An error occurred");
     } finally {
@@ -154,19 +192,19 @@ export default function EditArtifactPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-              Edit Artifact
+              Edit Local Cuisine
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Update artifact details
+              Update cuisine details
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Edit the name, description, current location and optionally replace the artifact image.
+              Edit name, description, city origin and optionally replace the cuisine image.
             </p>
           </div>
 
-          <Link href="/artifacts/view-artifacts">
+          <Link href="/local-cuisines/view-local-cuisines">
             <button className="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
-              Back to artifacts
+              Back to cuisines
             </button>
           </Link>
         </div>
@@ -193,13 +231,13 @@ export default function EditArtifactPage() {
                 {imagePreviewUrl ? (
                   <img
                     src={imagePreviewUrl}
-                    alt="New artifact preview"
+                    alt="New cuisine preview"
                     className="h-72 w-full object-cover"
                   />
                 ) : existingImageUrl ? (
                   <img
                     src={existingImageUrl}
-                    alt={name || "Artifact image"}
+                    alt={name || "Cuisine image"}
                     className="h-72 w-full object-cover"
                   />
                 ) : (
@@ -212,18 +250,18 @@ export default function EditArtifactPage() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="artifact-image">Replace image (optional)</Label>
+                <Label htmlFor="cuisine-image">Replace image (optional)</Label>
                 <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
                   <input
-                    id="artifact-image"
+                    id="cuisine-image"
                     type="file"
                     accept="image/*"
                     className="block w-full text-sm text-slate-700 dark:text-slate-300"
                     onChange={(e) => onPickImage(e.target.files?.[0] || null)}
                   />
                   <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Uploads to Supabase storage bucket <span className="font-semibold">KulturAR-assets</span> inside folder <span className="font-semibold">ARTIFACTS</span>.
-                    Max 5MB.
+                    Uploads to Supabase bucket <span className="font-semibold">KulturAR-assets</span> inside folder{" "}
+                    <span className="font-semibold">CUISINES</span>. Max 5MB.
                   </div>
                 </div>
               </div>
@@ -232,42 +270,56 @@ export default function EditArtifactPage() {
 
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="artifact-name">
-                Artifact name
+              <label
+                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                htmlFor="cuisine-name"
+              >
+                Name
               </label>
-              <Input id="artifact-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Artifact name" />
+              <Input
+                id="cuisine-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Cuisine name"
+              />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="artifact-location">
-                Current location
+              <label
+                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                htmlFor="cuisine-city"
+              >
+                City origin
               </label>
               <Input
-                id="artifact-location"
-                value={currentLocation}
-                onChange={(e) => setCurrentLocation(e.target.value)}
-                placeholder="Current location"
+                id="cuisine-city"
+                value={cityOrigin}
+                onChange={(e) => setCityOrigin(e.target.value)}
+                placeholder="City origin"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="artifact-description">
+            <label
+              className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+              htmlFor="cuisine-description"
+            >
               Description
             </label>
             <textarea
-              id="artifact-description"
+              id="cuisine-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[140px] w-full rounded-3xl border border-input bg-transparent px-3 py-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              placeholder="Artifact description"
+              placeholder="Cuisine description"
             />
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <Button
               variant="outline"
-              onClick={() => router.push("/artifacts/view-artifacts")}
+              onClick={() => router.push("/local-cuisines/view-local-cuisines")}
               disabled={saving || loading}
             >
               Cancel
@@ -281,3 +333,4 @@ export default function EditArtifactPage() {
     </div>
   );
 }
+

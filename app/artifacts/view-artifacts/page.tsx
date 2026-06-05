@@ -127,7 +127,7 @@ export default function ArtifactsPage() {
                 </CardContent>
                 <CardFooter className="flex items-center justify-between gap-2">
                   <div className="flex gap-2">
-                    <Link href={`/artifacts/edit/${a.id}`}>
+                    <Link href={`/artifacts/edit-artifact/${a.id}`}>
                       <Button size="sm">Edit</Button>
                     </Link>
                     <Button
