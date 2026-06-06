@@ -74,7 +74,7 @@ export default function ViewProfilePage() {
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Admin Profile</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-            Display information for the currently logged-in admin.
+            Information of the currently logged-in admin.
           </p>
         </div>
 
