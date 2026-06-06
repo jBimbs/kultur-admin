@@ -118,7 +118,7 @@ export default function ViewProfilePage() {
             
             <div className="text-sm">
               <span className="text-slate-500">Password:</span>{" "}
-              <span className="font-medium">{admin.password || "Unknown"}</span>
+              <span className="font-medium">{(admin as any).password || "Unknown"}</span>
             </div>
           </CardContent>
         </Card>
