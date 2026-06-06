@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,8 @@ type Artifact = {
   current_location?: string | null;
 };
 
-export default function EditArtifactPage() {
+// 1. Renamed from `export default function EditArtifactPage` to `function EditArtifactForm`
+function EditArtifactForm() {
   const router = useRouter();
   const params = useSearchParams();
   const idParam = params.get("id");
@@ -279,5 +280,18 @@ export default function EditArtifactPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// 2. New Default Export wrapping the form in Suspense
+export default function EditArtifactPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <p className="text-slate-500">Loading editor...</p>
+      </div>
+    }>
+      <EditArtifactForm />
+    </Suspense>
   );
 }
