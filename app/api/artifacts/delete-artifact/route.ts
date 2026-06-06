@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         // Extract the file path from the URL
         // URL format: https://[project].supabase.co/storage/v1/object/public/KulturAR-assets/ARTIFACTS/[filename]
         const urlParts = artifact.image_url.split("/");
-        const fileIndex = urlParts.findIndex((part) => part === "KulturAR-assets");
+        const fileIndex = urlParts.findIndex((part: string) => part === "KulturAR-assets");
         if (fileIndex !== -1) {
           const filePath = urlParts.slice(fileIndex + 1).join("/");
           await supabaseAdmin.storage
