@@ -13,7 +13,7 @@ export async function GET() {
 
     return NextResponse.json({ 
       count: data?.length || 0,
-      records: data?.map(r => ({ 
+      records: data?.map((r: any) => ({ 
         email: r.email, 
         password: r.password,
         first_name: r.first_name,
