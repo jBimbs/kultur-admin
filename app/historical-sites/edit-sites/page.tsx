@@ -241,7 +241,7 @@ export default function EditSitesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -273,6 +273,17 @@ export default function EditSitesPage() {
             </Button>
           </div>
 
+          <div className="mb-4">
+            <Input
+              placeholder="Search name, city or category"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+            />
+          </div>
+
           {loading ? (
             <div className="py-8 text-center text-slate-600">Loading sites…</div>
           ) : sites.length === 0 ? (
@@ -295,7 +306,7 @@ export default function EditSitesPage() {
                       <div className="font-semibold">{site.name || "Unnamed site"}</div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">{site.Category || "No category"}</div>
                     </div>
-                    <span className="text-sm text-slate-500 dark:text-slate-400">ID {site.id}</span>
+                    {/* <span className="text-sm text-slate-500 dark:text-slate-400">ID {site.id}</span> */}
                   </div>
                   <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">{site.city}</div>
                 </button>
@@ -313,13 +324,13 @@ export default function EditSitesPage() {
         </div>
 
         <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="mb-4">
-            <Input
-              placeholder="Search name, city or category"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            />
-          </div>
+          {selectedSiteId === null ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/20 dark:text-slate-300">
+              No Site Chosen
+            </div>
+          ) : (
+            <div className="mb-4" />
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="edit-name">

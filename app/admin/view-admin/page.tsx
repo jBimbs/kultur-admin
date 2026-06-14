@@ -38,8 +38,8 @@ export default function ViewAdminPage() {
       const rangeEnd = rangeStart + pageSize - 1;
 
       let query = supabase
-        .from("admin")
-        .select("id, city, first_name, last_name, suffix")
+        .from("profiles")
+        .select("id, origin_type, first_name, last_name, middle_name, suffix, country")
         .order("id", { ascending: true })
         .range(rangeStart, rangeEnd);
 
@@ -94,11 +94,11 @@ export default function ViewAdminPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-            Admin Management
+            User Management
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Admins</h1>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Users</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-            Display and manage administrators stored in the Supabase <span className="font-medium">admin</span> table.
+            Display and manage user stored in the Supabase <span className="font-medium">users</span> table.
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export default function ViewAdminPage() {
         </div>
       </div>
 
-      <div className="mt-2">
+      <div className="mt-2 bg-white">
         <Input
           placeholder="Search by city, first name, last name, or suffix"
           value={search}
@@ -142,23 +142,28 @@ export default function ViewAdminPage() {
                   >
                     <CardHeader>
                       <CardTitle className="text-lg">
-                        {fullName || "Unnamed admin"}
+                        {fullName || "Unnamed User"}
                         {a.suffix ? <span className="ml-2 text-sm text-slate-500">{a.suffix}</span> : null}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="text-sm">
-                        <span className="text-slate-500">City:</span>{" "}
-                        <span className="font-medium">{a.city || "Unknown"}</span>
+                        <span className="text-slate-500">Filipino/Foreigner:</span>{" "}
+                        <span className="font-medium">{a.origin_type || "Unknown"}</span>
                       </div>
-                      <div className="text-sm">
+                      {/* <div className="text-sm">
                         <span className="text-slate-500">First name:</span>{" "}
                         <span className="font-medium">{a.first_name || "—"}</span>
                       </div>
                       <div className="text-sm">
                         <span className="text-slate-500">Last name:</span>{" "}
                         <span className="font-medium">{a.last_name || "—"}</span>
+                      </div> */}
+                      <div className="text-sm">
+                        <span className="text-slate-500">Country:</span>{" "}
+                        <span className="font-medium">{a.country || "—"}</span>
                       </div>
+                      
                       <div className="text-sm">
                         <span className="text-slate-500">Suffix:</span>{" "}
                         <span className="font-medium">{a.suffix || "—"}</span>

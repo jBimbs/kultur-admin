@@ -33,7 +33,8 @@ const navItems: NavItem[] = [
     href: "/local-cuisines/view-local-cuisines",
     iconSrc: "/cuisines.png",
   },
-  { label: "Admin", href: "/admin/view-admin", iconSrc: "/admin.png" },
+  { label: "Currated Trails", href: "/currated-trails/view-currated-trails", iconSrc: "/currated-trails.png" },
+  { label: "Users", href: "/admin/view-admin", iconSrc: "/admin.png" },
   { label: "Profile", href: "/profile/view-profile", iconSrc: "/profile.png" },
 ];
 

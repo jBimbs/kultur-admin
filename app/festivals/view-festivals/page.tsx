@@ -67,11 +67,11 @@ export default function FestivalsPage() {
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen  text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Festivals</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">CONTENT MANAGEMENT</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Festival data and management</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
               Display festival information, celebration dates, and event details from your Supabase dataset.

@@ -23,7 +23,13 @@ export default function HistoricalSitesPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [cities, setCities] = useState<string[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
   const pageSize = 6;
+
   const [totalCount, setTotalCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -31,6 +37,27 @@ export default function HistoricalSitesPage() {
 
     async function loadSites() {
       setLoading(true);
+
+      // fetch cities for filter (only once per session)
+      if (!citiesLoading && cities.length === 0) {
+        setCitiesLoading(true);
+        const { data: cityData, error: cityError } = await supabase
+          .from("sites")
+          .select("city")
+          .not("city", "is", null);
+
+        if (!cityError) {
+          const unique = Array.from(
+            new Set((cityData ?? []).map((r) => r.city).filter(Boolean))
+          ) as string[];
+          unique.sort((a, b) => a.localeCompare(b));
+          setCities(unique);
+        }
+        setCitiesLoading(false);
+      }
+
+
+
 
       const start = page * pageSize;
       const end = start + pageSize - 1;
@@ -42,6 +69,15 @@ export default function HistoricalSitesPage() {
         // search across name, city, Category
         query = query.or(`name.ilike.${pattern},city.ilike.${pattern},Category.ilike.${pattern}`);
       }
+
+      if (cityFilter !== "all") {
+        query = query.eq("city", cityFilter);
+      }
+
+      if (categoryFilter !== "all") {
+        query = query.eq("Category", categoryFilter);
+      }
+
 
       const { data, error } = await query.range(start, end);
 
@@ -62,6 +98,15 @@ export default function HistoricalSitesPage() {
         countQuery = countQuery.or(`name.ilike.${pattern},city.ilike.${pattern},Category.ilike.${pattern}`);
       }
 
+      if (cityFilter !== "all") {
+        countQuery = countQuery.eq("city", cityFilter);
+      }
+
+      if (categoryFilter !== "all") {
+        countQuery = countQuery.eq("Category", categoryFilter);
+      }
+
+
       const { count, error: countError } = await countQuery;
 
       if (mounted) {
@@ -77,7 +122,8 @@ export default function HistoricalSitesPage() {
     return () => {
       mounted = false;
     };
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, cityFilter, categoryFilter]);
+
 
   // debounce search input
   useEffect(() => {
@@ -88,7 +134,7 @@ export default function HistoricalSitesPage() {
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -108,27 +154,63 @@ export default function HistoricalSitesPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Link href="/historical-sites/add-site">
-          <Button className="w-full py-2 text-sm" variant="outline">Add Site</Button>
-        </Link>
-        <Link href="/historical-sites/view-sites">
-          <Button className="w-full py-2 text-sm">
-            View Sites
-          </Button>
+          <Button className="w-full py-1 text-sm" variant="outline">Add Site</Button>
         </Link>
         <Link href="/historical-sites/edit-sites">
-          <Button className="w-full py-2 text-sm" variant="outline">
+          <Button className="w-full py-1 text-sm" variant="outline">
             Edit Sites
           </Button>
         </Link>
       </div>
 
-      <div className="mt-4">
-        <Input
-          placeholder="Search name, city or category"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-        />
+      <div className="mt-6 py-8">
+        <div className="flex flex-col bg-white gap-2 sm:flex-row sm:items-center">
+          <Input
+            className="w-full sm:max-w-sm"
+            placeholder="Search name"
+            value={search}
+
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+          />
+
+          <select
+            className="h-8 w-full sm:w-56 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            value={cityFilter}
+            onChange={(e) => {
+              setCityFilter(e.target.value);
+              setPage(0);
+            }}
+            disabled={citiesLoading}
+          >
+            <option value="all">{citiesLoading ? "Loading cities…" : "All cities"}</option>
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+
+          <select
+            className="h-8 w-full sm:w-56 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="all">All categories</option>
+            <option value="Monument">Monument</option>
+            <option value="Church">Church</option>
+            <option value="House">House</option>
+            <option value="Site">Site</option>
+          </select>
+        </div>
       </div>
+
 
       <div>
         {loading ? (
