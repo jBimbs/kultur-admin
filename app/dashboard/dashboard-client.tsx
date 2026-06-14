@@ -2,7 +2,18 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { PieChart, Pie, Cell } from "recharts";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  LineChart, 
+  Line, 
+  Tooltip, 
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
 
 type UserRecord = {
   id: string;
@@ -11,11 +22,22 @@ type UserRecord = {
   last_sign_in_at: number | null;
 };
 
-type DashboardClientProps = {
-  initialUsers: UserRecord[];
+// Updated Type to include the joined 'sites' table data
+type VisitLog = {
+  site_id: number;
+  visit_count: number;
+  last_visited_at: string;
+  sites?: {
+    name: string;
+  } | null;
 };
 
-export function DashboardClient({ initialUsers }: DashboardClientProps) {
+type DashboardClientProps = {
+  initialUsers: UserRecord[];
+  mostVisitedLogs: VisitLog[];
+};
+
+export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClientProps) {
   const [timeframe, setTimeframe] = useState("this_week");
 
   // 1. Calculate overall metrics independent of dropdown filter bounds
@@ -45,22 +67,14 @@ export function DashboardClient({ initialUsers }: DashboardClientProps) {
       if (!u.created_at) return false;
       
       switch (timeframe) {
-        case "today":
-          return u.created_at >= startOfToday;
-        case "this_week":
-          return u.created_at >= startOfThisWeek;
-        case "last_week":
-          return u.created_at >= startOfLastWeek && u.created_at < endOfLastWeek;
-        case "this_month":
-          return u.created_at >= startOfThisMonth;
-        case "last_month":
-          return u.created_at >= startOfLastMonth && u.created_at < endOfLastMonth;
-        case "this_year":
-          return u.created_at >= startOfThisYear;
-        case "last_year":
-          return u.created_at >= startOfLastYear && u.created_at < endOfLastYear;
-        default:
-          return true;
+        case "today": return u.created_at >= startOfToday;
+        case "this_week": return u.created_at >= startOfThisWeek;
+        case "last_week": return u.created_at >= startOfLastWeek && u.created_at < endOfLastWeek;
+        case "this_month": return u.created_at >= startOfThisMonth;
+        case "last_month": return u.created_at >= startOfLastMonth && u.created_at < endOfLastMonth;
+        case "this_year": return u.created_at >= startOfThisYear;
+        case "last_year": return u.created_at >= startOfLastYear && u.created_at < endOfLastYear;
+        default: return true;
       }
     });
 
@@ -120,16 +134,25 @@ export function DashboardClient({ initialUsers }: DashboardClientProps) {
     { foreignHeight: activeForeigners > 0 ? Math.min(120, 60 + activeForeigners * 0.6) : 45, localHeight: activeLocals > 0 ? Math.min(120, 50 + activeLocals * 0.3) : 35 },
   ];
 
+  // Prepare data for the new Most Visited Sites Line Chart
+  const totalSiteVisits = mostVisitedLogs.reduce((acc, curr) => acc + curr.visit_count, 0);
+  const siteLineChartData = mostVisitedLogs.map((log) => ({
+    name: log.sites?.name || `Site ${log.site_id}`,
+    percentage: totalSiteVisits > 0 ? Math.round((log.visit_count / totalSiteVisits) * 100) : 0,
+    visits: log.visit_count,
+  }));
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] p-8 font-sans antialiased text-gray-950">
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">DASHBOARD OVERVIEW</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">User analysis and management</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Display dashboard overview of overall users, total users created, foreign user, local users and active users via timeframes.
-            </p>
-          </div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">DASHBOARD OVERVIEW</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">User analysis and management</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+            Display dashboard overview of overall users, total users created, foreign user, local users and active users via timeframes.
+          </p>
+        </div>
+          
         {/* --- MAIN HEADER METRICS OVERVIEW DASHBOARD --- */}
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-6">
@@ -293,6 +316,112 @@ export function DashboardClient({ initialUsers }: DashboardClientProps) {
             ))}
           </div>
         </Card>
+
+        {/* --- KULTURAR HERITAGE SITES ACTIVITY LOG SECTION --- */}
+        <div className="mt-8 space-y-4">
+          <h2 className="text-2xl font-medium tracking-tight text-gray-900">Activity Log</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+Shows the activity log of users such as the most visited sites.          </p>
+          
+          {/* Even 50/50 split using md:grid-cols-2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Left Card: Most Visited Sites List */}
+            <Card className="rounded-xl border-0  shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-medium tracking-wide text-gray-900 mb-6">Most Visited Sites</h3>
+                
+                <ul className="space-y-3">
+                  {mostVisitedLogs.length > 0 ? (
+                    mostVisitedLogs.map((log, idx) => {
+                      const siteName = log.sites?.name || `Site ${log.site_id}`;
+                      
+                      return (
+                        <li key={idx} className="text-sm font-normal text-gray-800 break-words">
+                          {siteName}
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="text-sm text-gray-500">No sites visited yet.</li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Right Card: Percentages and Recharts Line Graph */}
+            <Card className="rounded-xl border-0  shadow-sm">
+              <CardContent className="p-6 flex flex-col h-full">
+                {/* <h3 className="text-sm font-medium tracking-wide text-gray-900 mb-6">Line Graph of most visited sites</h3> */}
+                
+                <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1">
+                  {/* Left Column: Calculated Percentages */}
+                  <ul className="space-y-3 min-w-[140px]">
+                    {siteLineChartData.length > 0 ? (
+                      siteLineChartData.map((data, idx) => (
+                        <li key={idx} className="text-sm font-normal text-gray-800 break-words pr-4">
+                          {data.name} - {data.percentage}%
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-sm text-gray-500">No data available.</li>
+                    )}
+                  </ul>
+
+                  {/* Right Column: Recharts Line Graph Integration */}
+                  <div className="flex-1 relative w-full min-h-[140px] pt-2 pl-2">
+                    {siteLineChartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={siteLineChartData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
+                          {/* Adds the horizontal lines from your example */}
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          
+                          {/* Bottom labels (Site names) */}
+                          <XAxis 
+                            dataKey="name" 
+                            axisLine={true} 
+                            tickLine={false} 
+                            tick={{ fontSize: 10, fill: '#6B7280' }} 
+                          />
+                          
+                          {/* Side labels (Percentages) */}
+                          <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 10, fill: '#6B7280' }} 
+                          />
+                          
+                          <Tooltip 
+                            cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '3 3' }}
+                            contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '12px', color: '#111827' }}
+                            formatter={(value: number, name: string, props: any) => [`${value}% (${props.payload.visits} visits)`, 'Frequency']}
+                          />
+                          
+                          {/* Line styling adjusted to look like your example */}
+                          <Line 
+                            type="monotone" 
+                            dataKey="percentage" 
+                            stroke="#F97316" 
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: "#F97316", strokeWidth: 0 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="text-xs text-gray-400 pb-4">Awaiting visitor data</span>
+                      </div>
+                    )}
+                    
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
+
+          </div>
+        </div>
 
       </div>
     </div>

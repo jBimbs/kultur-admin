@@ -3,7 +3,6 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
-  // Fetch profiles data records directly
   const { data: profiles, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("id, origin_type, created_at");
@@ -13,7 +12,6 @@ export default async function DashboardPage() {
     return <div className="p-8 text-red-500">Error loading database connection profiles.</div>;
   }
 
-  // Fetch auth user records to inspect sign-in activity
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
   
   if (authError || !authData) {
@@ -21,7 +19,23 @@ export default async function DashboardPage() {
     return <div className="p-8 text-red-500">Error loading authorization schemas.</div>;
   }
 
-  // Map the live record structures safely into a flat data array
+  const { data: mostVisitedData, error: visitedError } = await supabaseAdmin
+    .from("most_visited")
+    .select(`
+      site_id, 
+      visit_count, 
+      last_visited_at,
+      sites (
+        name
+      )
+    `)
+    .order("last_visited_at", { ascending: false })
+    .limit(10); 
+
+  if (visitedError) {
+    console.error("Most visited table fetch failure:", visitedError);
+  }
+
   const activeUserMap = new Map(
     authData.users.map((user) => [user.id, user.last_sign_in_at])
   );
@@ -33,5 +47,11 @@ export default async function DashboardPage() {
     last_sign_in_at: activeUserMap.get(p.id) ? new Date(activeUserMap.get(p.id)!).getTime() : null,
   }));
 
-  return <DashboardClient initialUsers={realizedUsers} />;
+  return (
+    <DashboardClient 
+      initialUsers={realizedUsers} 
+      // @ts-ignore
+      mostVisitedLogs={mostVisitedData || []} 
+    />
+  );
 }
