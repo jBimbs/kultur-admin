@@ -197,7 +197,7 @@ export default function CurratedTrailsPage() {
 
                     <CardFooter className="flex items-center justify-between gap-2">
                       <div className="flex gap-2">
-                        <Link href={`/currated-trails/edit-currated-trails/${t.id}`}>
+                        <Link href={`/currated-trails/edit-currated-trail/${t.id}`}>
                           <Button size="sm">Edit</Button>
                         </Link>
 
