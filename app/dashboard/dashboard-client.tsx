@@ -299,21 +299,65 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
             </div>
           </div>
           
-          <div className="flex h-36 items-end justify-center gap-12 pb-4">
-            {liveGraphDistribution.map((item, idx) => (
-              <div key={idx} className="flex flex-row items-end gap-1.5">
-                {/* Thin Foreign Active Pillar */}
-                <div 
-                  className="w-[1.5px] bg-gray-900 rounded-full transition-all duration-500 ease-out" 
-                  style={{ height: `${item.foreignHeight}px` }}
+          {/* Recharts LineGraph style (matching Activity Log chart) */}
+          <div className="flex-1 relative w-full min-h-[160px] pt-2 pl-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={liveGraphDistribution.map((item, idx) => ({
+                  name: `Interval ${idx + 1}`,
+                  foreignActive: item.foreignHeight,
+                  localActive: item.localHeight,
+                }))}
+                margin={{ top: 10, right: 10, left: -25, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+
+                <XAxis
+                  dataKey="name"
+                  axisLine={true}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: "#6B7280" }}
                 />
-                {/* Thin Local Active Pillar */}
-                <div 
-                  className="w-[1.5px] bg-gray-300 rounded-full transition-all duration-500 ease-out" 
-                  style={{ height: `${item.localHeight}px` }}
+
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: "#6B7280" }}
                 />
-              </div>
-            ))}
+
+                <Tooltip
+                  cursor={{ stroke: "#9CA3AF", strokeWidth: 1, strokeDasharray: "3 3" }}
+                  contentStyle={{
+                    borderRadius: "8px",
+                    border: "1px solid #E5E7EB",
+                    fontSize: "12px",
+                    color: "#111827",
+                  }}
+                  formatter={(value: number, name: string) => {
+                    const label = name === "foreignActive" ? "Foreign Active" : "Local Active";
+                    return [`${value}`, label];
+                  }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="foreignActive"
+                  stroke="#111827"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "#111827", strokeWidth: 0 }}
+                  activeDot={{ r: 6 }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="localActive"
+                  stroke="#D1D5DB"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "#D1D5DB", strokeWidth: 0 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </Card>
 

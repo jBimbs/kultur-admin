@@ -25,6 +25,9 @@ export default function ArtifactsPage() {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [query, setQuery] = useState("");
+
   const [page, setPage] = useState(0);
   const pageSize = 6;
   const [totalCount, setTotalCount] = useState<number | null>(null);
@@ -40,11 +43,17 @@ export default function ArtifactsPage() {
       const start = page * pageSize;
       const end = start + pageSize - 1;
 
-      const { data, error: fetchError } = await supabase
+      let queryBuilder = supabase
         .from("artifacts")
         .select("id, name, description, image_url, current_location")
-        .range(start, end)
         .order("id", { ascending: false });
+
+      if (query.trim()) {
+        queryBuilder = queryBuilder.ilike("name", `%${query.trim()}%`);
+      }
+
+      const { data, error: fetchError } = await queryBuilder.range(start, end);
+
 
       if (!mounted) return;
 
@@ -71,9 +80,10 @@ export default function ArtifactsPage() {
     return () => {
       mounted = false;
     };
-  }, [page]);
+  }, [page, query]);
 
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
+
 
   return (
     <div className="min-h-screen  text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -90,14 +100,29 @@ export default function ArtifactsPage() {
               Showcase artifact records and maintain the inventory of cultural objects from your backend.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Link href="/artifacts/add-artifact">
-              <Button>Add Artifact</Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline">Back to dashboard</Button>
-            </Link>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full sm:w-80">
+              <input
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(0);
+                }}
+                placeholder="Search artifacts…"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Link href="/artifacts/add-artifact">
+                <Button>Add Artifact</Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="outline">Back to dashboard</Button>
+              </Link>
+            </div>
           </div>
+
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

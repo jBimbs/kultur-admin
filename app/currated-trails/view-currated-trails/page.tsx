@@ -5,60 +5,43 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 
-type Festival = {
+type Trail = {
   id: number;
-  name?: string | null;
-  description?: string | null;
-  city?: string | null;
+  title?: string | null;
   image_url?: string | null;
+  difficulty?: string | null;
+  duration?: string | null;
+  distance?: string | null;
 };
 
-const CITY_OPTIONS = [
-  "Alfonso",
-  "Amadeo",
-  "Bacoor",
-  "Carmona",
-  "Cavite City",
-  "Dasmariñas",
-  "General Mariano Alvarez",
-  "General Trias",
-  "Indang",
-  "Kawit",
-  "Magallanes",
-  "Maragondon",
-  "Naic",
-  "Rosario",
-  "Silang",
-  "Tanza",
-  "Ternate",
-  "Trece Martires",
-];
-
-export default function FestivalsPage() {
-  const [festivals, setFestivals] = useState<Festival[]>([]);
+export default function CurratedTrailsPage() {
+  const [trails, setTrails] = useState<Trail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
-  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
 
   const [page, setPage] = useState(0);
+
   const pageSize = 6;
   const [totalCount, setTotalCount] = useState<number | null>(null);
+
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadFestivals() {
+    async function loadTrails() {
       setLoading(true);
       setError(null);
 
@@ -66,44 +49,35 @@ export default function FestivalsPage() {
       const end = start + pageSize - 1;
 
       let queryBuilder = supabase
-        .from("festivals")
-        .select("id, name, description, city, image_url")
+        .from("trails")
+        .select("id, title, image_url, difficulty, duration, distance")
         .order("id", { ascending: false });
 
-      const q = query.trim();
-      if (q) {
-        queryBuilder = queryBuilder.ilike("name", `%${q}%`);
+      if (query.trim()) {
+        queryBuilder = queryBuilder.ilike("title", `%${query.trim()}%`);
       }
 
-      if (cityFilter !== "all") {
-        queryBuilder = queryBuilder.eq("city", cityFilter);
+      if (difficultyFilter !== "all") {
+        queryBuilder = queryBuilder.eq("difficulty", difficultyFilter);
       }
 
-      const { data, error } = await queryBuilder.range(start, end);
+
+      const { data, error: fetchError } = await queryBuilder.range(start, end);
+
 
       if (!mounted) return;
 
-      if (error) {
-        setError(error.message);
-        setFestivals([]);
+      if (fetchError) {
+        setError(fetchError.message);
+        setTrails([]);
       } else {
-        setFestivals((data as Festival[]) || []);
+        setTrails((data as Trail[]) || []);
       }
 
-      // total count (respect filters)
-      let countQuery = supabase
-        .from("festivals")
+      const { count, error: countError } = await supabase
+        .from("trails")
         .select("id", { head: true, count: "exact" });
 
-      if (q) {
-        countQuery = countQuery.ilike("name", `%${q}%`);
-      }
-
-      if (cityFilter !== "all") {
-        countQuery = countQuery.eq("city", cityFilter);
-      }
-
-      const { count, error: countError } = await countQuery;
       if (mounted) {
         if (countError) setTotalCount(null);
         else setTotalCount(count ?? 0);
@@ -112,11 +86,13 @@ export default function FestivalsPage() {
       setLoading(false);
     }
 
-    loadFestivals();
+    loadTrails();
     return () => {
       mounted = false;
     };
-  }, [page, query, cityFilter]);
+  }, [page, query, difficultyFilter]);
+
+
 
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
@@ -129,10 +105,10 @@ export default function FestivalsPage() {
               CONTENT MANAGEMENT
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Festival data and management
+              Curated trails data and management
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Display festival information, celebration dates, and event details from your Supabase dataset.
+              Display curated trail information from your Supabase dataset.
             </p>
           </div>
 
@@ -144,31 +120,31 @@ export default function FestivalsPage() {
                   setQuery(e.target.value);
                   setPage(0);
                 }}
-                placeholder="Search festivals…"
+                placeholder="Search trails…"
                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
             </div>
 
             <div className="w-full sm:w-56">
               <select
-                value={cityFilter}
+                value={difficultyFilter}
                 onChange={(e) => {
-                  setCityFilter(e.target.value);
+                  setDifficultyFilter(e.target.value);
                   setPage(0);
                 }}
                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
               >
-                <option value="all">All cities</option>
-                {CITY_OPTIONS.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
+                <option value="all">All difficulties</option>
+                <option value="Easy">Easy</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Hard">Hard</option>
+
               </select>
             </div>
 
-            <Link href="/festivals/add-festival">
-              <Button>Add Festival</Button>
+
+            <Link href="/currated-trails/add-currated-trail">
+              <Button>Add Trail</Button>
             </Link>
             <Link href="/dashboard">
               <Button variant="outline">Back to dashboard</Button>
@@ -176,71 +152,84 @@ export default function FestivalsPage() {
           </div>
         </div>
 
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <div className="col-span-full text-center py-8">Loading festivals…</div>
+            <div className="col-span-full text-center py-8">Loading trails…</div>
           ) : error ? (
             <div className="col-span-full text-center py-8 text-rose-600">{error}</div>
-          ) : festivals.length === 0 ? (
-            <div className="col-span-full text-center py-8 text-slate-600">No festivals found.</div>
+          ) : trails.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-slate-600">No trails found.</div>
           ) : (
-            festivals.map((f) => (
-              <Card key={f.id} className="overflow-hidden">
-                {typeof f.id !== "number" ? (
-                  <div className="p-4 text-rose-600">Error: Invalid festival ID for this entry.</div>
+            trails.map((t) => (
+              <Card key={t.id} className="overflow-hidden">
+                {typeof t.id !== "number" ? (
+                  <div className="p-4 text-rose-600">Error: Invalid trail ID for this entry.</div>
                 ) : (
                   <>
-                    {f.image_url ? (
+                    {t.image_url ? (
                       <img
-                        src={f.image_url}
-                        alt={f.name || "festival image"}
+                        src={(() => {
+                          const url = t.image_url ?? "";
+                          // If the DB already contains a full URL (e.g. https://...), use it as-is.
+                          // Otherwise treat it as an absolute/relative asset path.
+                          return /^https?:\/\//i.test(url) ? url : url;
+                        })()}
+                        alt={t.title || "trail image"}
                         className="h-40 w-full object-cover"
                       />
                     ) : null}
+
+
                     <CardHeader>
                       <div className="flex items-center justify-between gap-2">
-                        <CardTitle className="truncate">{f.name}</CardTitle>
-                        <span className="text-xs font-mono text-slate-400">#{f.id}</span>
+                        <CardTitle className="truncate">{t.title}</CardTitle>
+                        <span className="text-xs font-mono text-slate-400"></span>
                       </div>
-                      <CardDescription>{f.city}</CardDescription>
+                      <CardDescription>
+                        {t.difficulty ? `Difficulty: ${t.difficulty}` : ""}
+                        {t.duration ? ` • Duration: ${t.duration}` : ""}
+                        {t.distance ? ` • Distance: ${t.distance}` : ""}
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">{f.description}</p>
-                    </CardContent>
+
+                    
+
                     <CardFooter className="flex items-center justify-between gap-2">
                       <div className="flex gap-2">
-                        <Link href={`/festivals/edit/${f.id}`}>
+                        <Link href={`/currated-trails/edit-currated-trails/${t.id}`}>
                           <Button size="sm">Edit</Button>
                         </Link>
+
                         <Button
                           size="sm"
                           variant="destructive"
                           onClick={async () => {
-                            if (!confirm("Delete this festival?")) return;
+                            if (!confirm("Delete this trail?")) return;
                             try {
-                              setDeletingId(f.id);
-                              const res = await fetch("/api/festivals/delete-festival", {
+                              setDeletingId(t.id);
+                              const res = await fetch("/api/trails/delete-trail", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: f.id }),
+                                body: JSON.stringify({ id: t.id }),
                               });
                               const body = await res.json();
 
                               if (!res.ok || body.error) {
-                                alert(body.error || "Failed to delete festival");
+                                alert(body.error || "Failed to delete trail");
                               } else {
-                                setFestivals((prev) => prev.filter((p) => p.id !== f.id));
+                                setTrails((prev) => prev.filter((p) => p.id !== t.id));
                                 setTotalCount((c) => (c && c > 0 ? c - 1 : c));
                               }
                             } catch {
-                              alert("Unexpected error deleting festival");
+                              alert("Unexpected error deleting trail");
                             } finally {
                               setDeletingId(null);
                             }
                           }}
                           disabled={deletingId !== null}
                         >
-                          {deletingId === f.id ? "Deleting…" : "Delete"}
+                          {deletingId === t.id ? "Deleting…" : "Delete"}
                         </Button>
                       </div>
                     </CardFooter>

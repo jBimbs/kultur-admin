@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 
+
 type Cuisine = {
   id: number;
   name?: string | null;
@@ -25,6 +26,8 @@ type Cuisine = {
 export default function LocalCuisinesPage() {
   const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [filteredCuisines, setFilteredCuisines] = useState<Cuisine[]>([]);
+
+  // Derived filtering (avoid keeping extra state in sync with effects)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -32,6 +35,27 @@ export default function LocalCuisinesPage() {
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [cityFilter, setCityFilter] = useState<string>("All");
+
+  const cityOptions = [
+    "Tagaytay",
+    "Cavite",
+    "Bacoor",
+    "Imus",
+    "Dasmarinas",
+    "Kawit",
+    "Carmona",
+    "Naic",
+    "Mendez-Nuñez",
+    "Rosario",
+    "Alfonso",
+    "Tanza",
+    "General Trias",
+    "Trece Martires",
+    "Ternate",
+    "Maragondon",
+  ];
+
 
   useEffect(() => {
     let mounted = true;
@@ -76,21 +100,31 @@ export default function LocalCuisinesPage() {
     };
   }, [page]);
 
-  // Filter cuisines based on search query
+  // Filter cuisines based on dropdown (city) and search query
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredCuisines(cuisines);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = cuisines.filter(
-        (c) =>
-          c.name?.toLowerCase().includes(query) ||
-          c.description?.toLowerCase().includes(query) ||
-          c.city_origin?.toLowerCase().includes(query)
-      );
-      setFilteredCuisines(filtered);
-    }
-  }, [searchQuery, cuisines]);
+    const normalizedCity = cityFilter === "All" ? "" : cityFilter.toLowerCase();
+
+    const query = searchQuery.trim().toLowerCase();
+
+    const filtered = cuisines.filter((c) => {
+      const cityOrigin = (c.city_origin ?? "").toLowerCase();
+
+      const matchesCity =
+        normalizedCity === "" ? true : cityOrigin === normalizedCity;
+
+      if (!query) return matchesCity;
+
+      const matchesSearch =
+        (c.name?.toLowerCase().includes(query) ?? false) ||
+        (c.description?.toLowerCase().includes(query) ?? false) ||
+        (c.city_origin?.toLowerCase().includes(query) ?? false);
+
+      return matchesCity && matchesSearch;
+    });
+
+    setFilteredCuisines(filtered);
+  }, [searchQuery, cityFilter, cuisines]);
+
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -125,13 +159,41 @@ export default function LocalCuisinesPage() {
         </div>
 
         <div className="mb-6 bg-white">
-          <Input
-            placeholder="Search cuisines by name, description, or city..."
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="rounded-2xl"
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="w-full sm:w-80">
+              <input
+                value={searchQuery}
+                onChange={(e) => {
+                  handleSearch(e.target.value);
+                }}
+                placeholder="Search cuisines…"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:placeholder:text-slate-500"
+              />
+            </div>
+
+            <div className="w-full sm:w-56">
+              <select
+                value={cityFilter}
+                onChange={(e) => {
+                  setCityFilter(e.target.value);
+                  setPage(0);
+                }}
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                aria-label="Filter by city"
+              >
+                <option value="All">All cities</option>
+                {cityOptions.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
+
+
+
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
@@ -140,9 +202,12 @@ export default function LocalCuisinesPage() {
             <div className="col-span-full py-8 text-center text-rose-600">{error}</div>
           ) : filteredCuisines.length === 0 ? (
             <div className="col-span-full py-8 text-center text-slate-600">
-              {searchQuery ? "No cuisines match your search." : "No cuisines found."}
+              {searchQuery || cityFilter !== "All"
+                ? "No cuisines match your filters."
+                : "No cuisines found."}
             </div>
           ) : (
+
             filteredCuisines.map((c) => (
               <Card key={c.id} className="overflow-hidden">
                 {c.image_url ? (
@@ -202,7 +267,7 @@ export default function LocalCuisinesPage() {
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-3">
-          {!searchQuery && (
+          {!searchQuery && cityFilter === "All" && (
             <>
               <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0}>
                 Previous
@@ -218,11 +283,12 @@ export default function LocalCuisinesPage() {
               </Button>
             </>
           )}
-          {searchQuery && (
+          {(!!searchQuery || cityFilter !== "All") && (
             <div className="text-sm text-slate-600">
               Found {filteredCuisines.length} result{filteredCuisines.length !== 1 ? "s" : ""}
             </div>
           )}
+
         </div>
       </div>
     </div>
