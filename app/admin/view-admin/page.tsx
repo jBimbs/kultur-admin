@@ -10,6 +10,8 @@ import { supabase } from "@/lib/supabase";
 type AdminRow = {
   id?: string | number;
   city?: string | null;
+  origin_type?: string | null; 
+  country?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   suffix?: string | null;
@@ -149,8 +151,7 @@ export default function ViewAdminPage() {
                     <CardContent className="space-y-2">
                       <div className="text-sm">
                         <span className="text-slate-500">Filipino/Foreigner:</span>{" "}
-                        <span className="font-medium">{a.origin_type || "Unknown"}</span>
-                      </div>
+<span className="font-medium">{a.origin_type || "Unknown"}</span>                      </div>
                       {/* <div className="text-sm">
                         <span className="text-slate-500">First name:</span>{" "}
                         <span className="font-medium">{a.first_name || "—"}</span>
