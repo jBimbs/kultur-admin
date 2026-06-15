@@ -333,9 +333,9 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
                     fontSize: "12px",
                     color: "#111827",
                   }}
-                  formatter={(value: number, name: string) => {
+                  formatter={(value: number | undefined, name: string) => {
                     const label = name === "foreignActive" ? "Foreign Active" : "Local Active";
-                    return [`${value}`, label];
+                    return [`${value ?? 0}`, label];
                   }}
                 />
 
