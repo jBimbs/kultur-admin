@@ -102,7 +102,7 @@ export default function ViewAdminPage() {
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Users</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-            Display and manage user stored in the Supabase <span className="font-medium">users</span> table.
+            Display and manage user stored in the database <span className="font-medium">users</span> table.
           </p>
         </div>
 
