@@ -14,6 +14,7 @@ import {
   YAxis,
   CartesianGrid
 } from "recharts";
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 type UserRecord = {
   id: string;
@@ -505,9 +506,10 @@ export function DashboardClient({
                                 fontSize: "12px",
                                 color: "#111827",
                               }}
-                              formatter={(value: unknown, name: string, props: any) => {
+                              formatter={(value: ValueType, name: NameType, props: any) => {
                                 const visits = props?.payload?.value ?? 0;
-                                return [`${visits} visits`, props?.payload?.name || name];
+                                const displayName = props?.payload?.name || (name as string) || "";
+                                return [`${visits} visits`, displayName];
                               }}
                             />
                           </PieChart>
@@ -620,9 +622,10 @@ export function DashboardClient({
                                 fontSize: "12px",
                                 color: "#111827",
                               }}
-                              formatter={(value: unknown, name: string, props: any) => {
+                              formatter={(value: ValueType, name: NameType, props: any) => {
                                 const saves = props?.payload?.value ?? 0;
-                                return [`${saves} saves`, props?.payload?.name || name];
+                                const displayName = props?.payload?.name || (name as string) || "";
+                                return [`${saves} saves`, displayName];
                               }}
                             />
                           </PieChart>
