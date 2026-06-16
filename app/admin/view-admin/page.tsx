@@ -92,7 +92,7 @@ export default function ViewAdminPage() {
   }, [totalCount, pageSize]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       
       {/* Header Block Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

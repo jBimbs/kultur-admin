@@ -403,7 +403,7 @@ export default function EditCurratedTrailPage() {
 
             <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
               <Button onClick={handleStep1Submit} className="rounded-2xl px-8" disabled={loading}>
-                Next: Details
+                Next
               </Button>
             </div>
           </CardContent>
@@ -465,7 +465,7 @@ export default function EditCurratedTrailPage() {
                 Back to Stops
               </Button>
               <Button onClick={handleStep2Submit} className="flex-1 rounded-2xl" disabled={loading}>
-                Next: Upload Image
+                Next
               </Button>
             </div>
           </CardContent>
@@ -516,7 +516,7 @@ export default function EditCurratedTrailPage() {
                 Back to Details
               </Button>
               <Button onClick={handleStep3Submit} disabled={loading} className="flex-1 rounded-2xl">
-                Next: Review
+                Review
               </Button>
             </div>
           </CardContent>
