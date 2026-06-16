@@ -1,6 +1,7 @@
 import React from "react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { DashboardClient } from "./dashboard-client";
+import { User } from "@supabase/supabase-js"; // Import Supabase's User type
 
 export default async function DashboardPage() {
   const { data: profiles, error: profileError } = await supabaseAdmin
@@ -36,22 +37,28 @@ export default async function DashboardPage() {
     console.error("Most visited table fetch failure:", visitedError);
   }
 
-  const activeUserMap = new Map(
-    authData.users.map((user) => [user.id, user.last_sign_in_at])
+  // Use the native Supabase User type here to accurately map auth properties
+  const activeUserMap = new Map<string, string | null>(
+    authData.users.map((user: User) => [user.id, user.last_sign_in_at ?? null])
   );
 
-  const realizedUsers = profiles.map((p) => ({
-    id: p.id,
-    origin_type: p.origin_type ? p.origin_type.toString().trim().toLowerCase() : null,
-    created_at: p.created_at ? new Date(p.created_at).getTime() : null,
-    last_sign_in_at: activeUserMap.get(p.id) ? new Date(activeUserMap.get(p.id)!).getTime() : null,
-  }));
+  const realizedUsers = profiles.map((p: { id: string; origin_type: string | null; created_at: string | null }) => {
+    const lastSignIn = activeUserMap.get(p.id);
+    
+    return {
+      id: p.id,
+      origin_type: p.origin_type ? p.origin_type.toString().trim().toLowerCase() : null,
+      created_at: p.created_at ? new Date(p.created_at).getTime() : null,
+      last_sign_in_at: lastSignIn ? new Date(lastSignIn).getTime() : null,
+    };
+  });
 
   return (
     <DashboardClient 
       initialUsers={realizedUsers} 
       // @ts-ignore
       mostVisitedLogs={mostVisitedData || []} 
+      mostSavedItems={[]} // <-- Add this to satisfy the required prop type
     />
   );
 }
