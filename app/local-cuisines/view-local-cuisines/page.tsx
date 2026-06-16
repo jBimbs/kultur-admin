@@ -221,7 +221,7 @@ export default function LocalCuisinesPage() {
                     <Link href={`/local-cuisines/edit-local-cuisines/${c.id}`}>
                       <Button size="sm">Edit</Button>
                     </Link>
-                    <Button
+                    {/* <Button
                       size="sm"
                       variant="destructive"
                       onClick={async () => {
@@ -249,7 +249,7 @@ export default function LocalCuisinesPage() {
                       disabled={deletingId !== null}
                     >
                       {deletingId === c.id ? "Deleting…" : "Delete"}
-                    </Button>
+                    </Button> */}
                   </div>
                 </CardFooter>
               </Card>

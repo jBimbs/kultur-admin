@@ -31,12 +31,24 @@ type VisitLog = {
   } | null;
 };
 
+type SavedItemLog = {
+  item_id: number;
+  item_name: string;
+  item_type: string; // 'sites' | 'festivals' | 'artifacts' | 'cuisines'
+  save_count: number;
+};
+
 type DashboardClientProps = {
   initialUsers: UserRecord[];
   mostVisitedLogs: VisitLog[];
+  mostSavedItems: SavedItemLog[];
 };
 
-export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClientProps) {
+export function DashboardClient({ 
+  initialUsers = [], 
+  mostVisitedLogs = [], 
+  mostSavedItems = [] // Fallback assignment to prevent "not iterable" crashes
+}: DashboardClientProps) {
   const [timeframe, setTimeframe] = useState("this_year");
 
   // 1. Calculate overall metrics independent of dropdown filter bounds
@@ -154,9 +166,10 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
     return monthlyBuckets;
   }, [initialUsers]);
 
-  // Color theme variables applied structurally for the heritage sites
+  // Color palette for items
   const COLORS = ["#F97316", "#3B82F6", "#10B981", "#8B5CF6", "#EC4899", "#6366F1"];
 
+  // Processing Most Visited Sites
   const totalSiteVisits = mostVisitedLogs.reduce((acc, curr) => acc + curr.visit_count, 0);
   
   const sitePieChartData = mostVisitedLogs.map((log, index) => ({
@@ -166,8 +179,25 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
     color: COLORS[index % COLORS.length]
   }));
 
+  // Processing Top 5 Most Saved Items with robust array defense checks
+  const topSavedItems = useMemo(() => {
+    if (!Array.isArray(mostSavedItems)) return [];
+    return [...mostSavedItems]
+      .sort((a, b) => b.save_count - a.save_count)
+      .slice(0, 5);
+  }, [mostSavedItems]);
+
+  const totalSavesCount = topSavedItems.reduce((acc, curr) => acc + curr.save_count, 0);
+
+  const savedItemsPieChartData = topSavedItems.map((item, index) => ({
+    name: item.item_name || `Item ${item.item_id}`,
+    value: item.save_count,
+    percentage: totalSavesCount > 0 ? ((item.save_count / totalSavesCount) * 100).toFixed(1) : "0.0",
+    color: COLORS[index % COLORS.length]
+  }));
+
   return (
-    <div className="min-h-screen bg-[#F9FAFB] p-8 font-sans antialiased text-gray-950">
+    <div className="min-h-screen p-8 font-sans antialiased text-gray-950">
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">DASHBOARD OVERVIEW</p>
@@ -427,7 +457,7 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1 items-center">
                   
-                  {/* Left Side: Dynamic List with exact matching Color Indicators */}
+                  {/* Left Side Labels */}
                   <ul className="space-y-3 min-w-[140px] self-start sm:self-center">
                     {sitePieChartData.length > 0 ? (
                       sitePieChartData.map((data, idx) => (
@@ -446,7 +476,7 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
                     )}
                   </ul>
 
-                  {/* Right Side: Exact Rounded Donut Matching Local/Foreign Ring Aesthetics */}
+                  {/* Right Side Donut Chart */}
                   <div className="flex-1 relative h-40 w-40 flex items-center justify-center">
                     {sitePieChartData.length > 0 ? (
                       <>
@@ -482,7 +512,6 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
                             />
                           </PieChart>
                         </ResponsiveContainer>
-                        {/* Central text structure alignment */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                           <span className="text-xl font-bold text-gray-900">{totalSiteVisits}</span>
                           <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">Visits</span>
@@ -491,6 +520,121 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <span className="text-xs text-gray-400">Awaiting visitor data</span>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* --- MOST SAVED ITEMS (TOP 5) SECTION --- */}
+        <div className="mt-8 space-y-4">
+          <h2 className="text-2xl font-medium tracking-tight text-gray-900">Saved Performance Log</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+            Shows user interaction with landmarks, festivals, artifacts, and cuisines by tracking saving metrics.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Top 5 Names List */}
+            <Card className="rounded-xl border-0 shadow-sm bg-white">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-medium tracking-wide text-gray-900 mb-6">Most Saved Items (Top 5)</h3>
+                <ul className="space-y-3">
+                  {topSavedItems.length > 0 ? (
+                    topSavedItems.map((item, idx) => {
+                      return (
+                        <li key={idx} className="text-sm font-normal text-gray-800 break-words flex items-center justify-between">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span 
+                              className="h-2 w-2 rounded-full inline-block shrink-0" 
+                              style={{ backgroundColor: COLORS[idx % COLORS.length] }} 
+                            />
+                            <span className="truncate">{item.item_name}</span>
+                          </div>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wider shrink-0 ml-2">
+                            {item.item_type}
+                          </span>
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li className="text-sm text-gray-500">No items saved yet.</li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Donut Distribution Breakdown */}
+            <Card className="rounded-xl border-0 shadow-sm bg-white">
+              <CardContent className="p-6 flex flex-col h-full">
+                <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1 items-center">
+                  
+                  {/* Left Side Labels and Metrics */}
+                  <ul className="space-y-3 min-w-[140px] self-start sm:self-center">
+                    {savedItemsPieChartData.length > 0 ? (
+                      savedItemsPieChartData.map((data, idx) => (
+                        <li key={idx} className="text-sm font-normal text-gray-800 break-words pr-2 flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full block shrink-0" style={{ backgroundColor: data.color }} />
+                            <span className="font-bold text-gray-900">{data.percentage}%</span>
+                          </div>
+                          <span className="text-gray-400 text-[11px] font-medium ml-3.5 pl-px truncate max-w-[120px]">
+                            {data.name}
+                          </span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-sm text-gray-500">No details available.</li>
+                    )}
+                  </ul>
+
+                  {/* Right Side Donut Ring */}
+                  <div className="flex-1 relative h-40 w-40 flex items-center justify-center">
+                    {savedItemsPieChartData.length > 0 ? (
+                      <>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={savedItemsPieChartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={48}
+                              outerRadius={64}
+                              paddingAngle={4}
+                              cornerRadius={10}
+                              startAngle={90}
+                              endAngle={-270}
+                              dataKey="value"
+                            >
+                              {savedItemsPieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                borderRadius: "8px",
+                                border: "1px solid #E5E7EB",
+                                fontSize: "12px",
+                                color: "#111827",
+                              }}
+                              formatter={(value: unknown, name: string, props: any) => {
+                                const saves = props?.payload?.value ?? 0;
+                                return [`${saves} saves`, props?.payload?.name || name];
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-xl font-bold text-gray-900">{totalSavesCount}</span>
+                          <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">Saves</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="text-xs text-gray-400">Awaiting user interaction data</span>
                       </div>
                     )}
                   </div>

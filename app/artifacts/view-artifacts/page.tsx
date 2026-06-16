@@ -157,7 +157,7 @@ export default function ArtifactsPage() {
                     <Link href={`/artifacts/edit-artifact/${a.id}`}>
                       <Button size="sm">Edit</Button>
                     </Link>
-                    <Button
+                    {/* <Button
                       size="sm"
                       variant="destructive"
                       onClick={async () => {
@@ -185,7 +185,7 @@ export default function ArtifactsPage() {
                       disabled={deletingId !== null}
                     >
                       {deletingId === a.id ? "Deleting…" : "Delete"}
-                    </Button>
+                    </Button> */}
                   </div>
                 </CardFooter>
               </Card>

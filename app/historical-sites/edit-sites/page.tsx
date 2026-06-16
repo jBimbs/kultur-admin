@@ -306,7 +306,6 @@ export default function EditSitesPage() {
                       <div className="font-semibold">{site.name || "Unnamed site"}</div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">{site.Category || "No category"}</div>
                     </div>
-                    {/* <span className="text-sm text-slate-500 dark:text-slate-400">ID {site.id}</span> */}
                   </div>
                   <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">{site.city}</div>
                 </button>
@@ -418,6 +417,9 @@ export default function EditSitesPage() {
               Site Image
             </label>
             <Input id="edit-image" type="file" accept="image/*" onChange={handleFileChange} />
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+              Uploads to Supabase bucket <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-slate-600 dark:text-slate-300">KulturAR-assets</span> inside folder <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-slate-600 dark:text-slate-300">SITES</span>. Max 5MB.
+            </p>
           </div>
 
           {imagePreview ? (

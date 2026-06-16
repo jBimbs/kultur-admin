@@ -222,7 +222,7 @@ export default function FestivalsPage() {
                         <Link href={`/festivals/edit/${f.id}`}>
                           <Button size="sm">Edit</Button>
                         </Link>
-                        <Button
+                        {/* <Button
                           size="sm"
                           variant="destructive"
                           onClick={async () => {
@@ -251,7 +251,7 @@ export default function FestivalsPage() {
                           disabled={deletingId !== null}
                         >
                           {deletingId === f.id ? "Deleting…" : "Delete"}
-                        </Button>
+                        </Button> */}
                       </div>
                     </CardFooter>
                   </>

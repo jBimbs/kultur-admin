@@ -133,11 +133,11 @@ export default function ViewAdminPage() {
       {/* Main Content Grid */}
       <div>
         {loading ? (
-          <div className="text-center py-8">Loading admins…</div>
+          <div className="text-center py-8">Loading users…</div>
         ) : error ? (
           <div className="text-center py-8 text-rose-600">{error}</div>
         ) : admins.length === 0 ? (
-          <div className="text-center py-8 text-slate-600">No admins found.</div>
+          <div className="text-center py-8 text-slate-600">No users found.</div>
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
+const CATEGORIES = ["Church", "House", "Monument", "Site"];
+
 export default function AddSitePage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -31,7 +33,7 @@ export default function AddSitePage() {
     }
 
     if (step === 2) {
-      if (!category.trim() || !latitude.trim() || !longitude.trim()) {
+      if (!category || !latitude.trim() || !longitude.trim()) {
         setError("Category, latitude, and longitude are required.");
         return false;
       }
@@ -92,7 +94,7 @@ export default function AddSitePage() {
       formData.append("name", name.trim());
       formData.append("description", description.trim());
       formData.append("city", city.trim());
-      formData.append("category", category.trim());
+      formData.append("category", category);
       formData.append("latitude", latitude);
       formData.append("longitude", longitude);
       formData.append("image", file);
@@ -184,13 +186,18 @@ export default function AddSitePage() {
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="site-category">
                 Category
               </label>
-              <Input
+              <select
                 id="site-category"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
-                placeholder="e.g. Monument, Museum, Heritage Site"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950"
                 required
-              />
+              >
+                <option value="" disabled>Select a category</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -240,6 +247,9 @@ export default function AddSitePage() {
                 onChange={handleFileChange}
                 required
               />
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                Uploads to Supabase storage bucket <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-slate-600 dark:text-slate-300">KulturAR-assets</span> inside folder <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded text-slate-600 dark:text-slate-300">SITES</span>. Max 5MB.
+              </p>
             </div>
             {imagePreview ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">

@@ -146,9 +146,9 @@ export default function HistoricalSitesPage() {
           <Link href="/historical-sites/add-site">
             <Button>Add Site</Button>
           </Link>
-          <Link href="/historical-sites/edit-sites">
+          {/* <Link href="/historical-sites/edit-sites">
             <Button variant="outline">Edit Sites</Button>
-          </Link>
+          </Link> */}
           <Link href="/dashboard">
             <Button variant="outline">Back to dashboard</Button>
           </Link>
@@ -223,7 +223,9 @@ export default function HistoricalSitesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs">No Image</div>
+                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs">
+                        No Image
+                      </div>
                     )}
                   </div>
                   <CardHeader>
@@ -242,6 +244,13 @@ export default function HistoricalSitesPage() {
                       {site.description || "No description available"}
                     </p>
                   </CardContent>
+                  <div className="px-6 pb-6">
+                    <div className="flex items-center justify-end">
+                      <Link href={site.id ? `/historical-sites/edit-sites?id=${site.id}` : `/historical-sites/edit-sites`}>
+                        <Button size="sm">Edit</Button>
+                      </Link>
+                    </div>
+                  </div>
                 </Card>
               ))}
             </div>
