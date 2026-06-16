@@ -103,10 +103,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: stopsDeleteErr.message }, { status: 500 });
     }
 
-    const insertRows = trailStops.map((s) => ({
+    // UPDATED: Added stop_order based on the array index
+    const insertRows = trailStops.map((s, index) => ({
       trail_id: id,
       site_id: s.site_id,
       notes: s.notes ?? "",
+      stop_order: index + 1, 
     }));
 
     const { error: stopsInsertErr } = await supabaseAdmin
@@ -123,4 +125,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-

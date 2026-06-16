@@ -22,7 +22,6 @@ type UserRecord = {
   last_sign_in_at: number | null;
 };
 
-// Updated Type to include the joined 'sites' table data
 type VisitLog = {
   site_id: number;
   visit_count: number;
@@ -38,12 +37,12 @@ type DashboardClientProps = {
 };
 
 export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClientProps) {
-  const [timeframe, setTimeframe] = useState("this_week");
+  const [timeframe, setTimeframe] = useState("this_year");
 
   // 1. Calculate overall metrics independent of dropdown filter bounds
   const overallUsersCount = initialUsers.length;
 
-  // 2. Dynamic Timeframe Range Evaluator
+  // 2. Dynamic Timeframe Range Evaluator for top card summary blocks
   const filteredMetrics = useMemo(() => {
     const now = new Date();
     
@@ -62,7 +61,6 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1).getTime();
     const endOfLastYear = startOfThisYear;
 
-    // Filter rows dynamically based on selection option matching bounds
     const usersInTimeframe = initialUsers.filter((u) => {
       if (!u.created_at) return false;
       
@@ -81,12 +79,11 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
     const totalUsers = usersInTimeframe.length;
     
     const foreignersInTimeframe = usersInTimeframe.filter((u) => u.origin_type === "foreigner");
-    const localsInTimeframe = usersInTimeframe.filter((u) => u.origin_type === "filipino" || u.origin_type === "local");
+    const localsInTimeframe = usersInTimeframe.filter((u) => u.origin_type === "filipino");
 
     const foreignersCount = foreignersInTimeframe.length;
     const localCount = localsInTimeframe.length;
     
-    // Timeframe evaluator helper for sign-ins
     const isSignInActive = (lastSignIn: number | null) => {
       if (!lastSignIn) return false;
       switch (timeframe) {
@@ -101,45 +98,72 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
       }
     };
 
-    // Extract precise current live active tallies split by origin class
     const activeForeigners = foreignersInTimeframe.filter((u) => isSignInActive(u.last_sign_in_at)).length;
     const activeLocals = localsInTimeframe.filter((u) => isSignInActive(u.last_sign_in_at)).length;
     const activeCount = activeForeigners + activeLocals;
 
-    return { totalUsers, foreignersCount, localCount, activeCount, activeForeigners, activeLocals };
+    return { totalUsers, foreignersCount, localCount, activeCount };
   }, [initialUsers, timeframe]);
 
-  const { totalUsers, foreignersCount, localCount, activeCount, activeForeigners, activeLocals } = filteredMetrics;
+  const { totalUsers, foreignersCount, localCount, activeCount } = filteredMetrics;
 
   const localPercentage = totalUsers > 0 ? ((localCount / totalUsers) * 100).toFixed(1) : "0.0";
   const foreignPercentage = totalUsers > 0 ? ((foreignersCount / totalUsers) * 100).toFixed(1) : "0.0";
 
+  // Data configured for Distribution Donut Charts
   const localPieData = [
-    { value: localCount || 1, color: localCount > 0 ? "#111827" : "#E5E7EB" },
-    { value: Math.max(0, totalUsers - localCount), color: "#E5E7EB" }
+    { value: localCount || 0, color: "#2563EB" },
+    { value: Math.max(0, totalUsers - localCount) || 1, color: "#93C5FD" }
   ];
 
   const foreignPieData = [
-    { value: foreignersCount || 1, color: foreignersCount > 0 ? "#111827" : "#E5E7EB" },
-    { value: Math.max(0, totalUsers - foreignersCount), color: "#E5E7EB" }
+    { value: foreignersCount || 0, color: "#0F766E" },
+    { value: Math.max(0, totalUsers - foreignersCount) || 1, color: "#A7F3D0" }
   ];
 
-  // Generates 6 discrete structural comparison intervals using current active counts
-  const liveGraphDistribution = [
-    { foreignHeight: activeForeigners > 0 ? Math.min(120, 20 + activeForeigners * 0.7) : 15, localHeight: activeLocals > 0 ? Math.min(120, 15 + activeLocals * 0.6) : 10 },
-    { foreignHeight: activeForeigners > 0 ? Math.min(120, 45 + activeForeigners * 0.5) : 35, localHeight: activeLocals > 0 ? Math.min(120, 55 + activeLocals * 0.4) : 40 },
-    { foreignHeight: activeForeigners > 0 ? Math.min(120, 85 + activeForeigners * 0.3) : 75, localHeight: activeLocals > 0 ? Math.min(120, 95 + activeLocals * 0.2) : 90 },
-    { foreignHeight: activeForeigners > 0 ? Math.min(120, 35 + activeForeigners * 0.8) : 20, localHeight: activeLocals > 0 ? Math.min(120, 25 + activeLocals * 0.7) : 15 },
-    { foreignHeight: activeForeigners > 0 ? Math.min(120, 75 + activeForeigners * 0.4) : 65, localHeight: activeLocals > 0 ? Math.min(120, 80 + activeLocals * 0.5) : 70 },
-    { foreignHeight: activeForeigners > 0 ? Math.min(120, 60 + activeForeigners * 0.6) : 45, localHeight: activeLocals > 0 ? Math.min(120, 50 + activeLocals * 0.3) : 35 },
-  ];
+  // Continuous Jan-Dec Monthly Distribution Processor for Active Users Trend
+  const activeUsersMonthlyData = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    const monthlyBuckets = months.map((monthName) => ({
+      name: monthName,
+      localActive: 0,
+      foreignActive: 0,
+      totalActive: 0,
+    }));
 
-  // Prepare data for the new Most Visited Sites Line Chart
+    initialUsers.forEach((user) => {
+      if (!user.last_sign_in_at) return;
+      
+      const date = new Date(user.last_sign_in_at);
+      if (date.getFullYear() === currentYear) {
+        const monthIndex = date.getMonth();
+        
+        if (monthIndex >= 0 && monthIndex < 12) {
+          if (user.origin_type === "filipino") {
+            monthlyBuckets[monthIndex].localActive += 1;
+          } else if (user.origin_type === "foreigner") {
+            monthlyBuckets[monthIndex].foreignActive += 1;
+          }
+          monthlyBuckets[monthIndex].totalActive += 1;
+        }
+      }
+    });
+
+    return monthlyBuckets;
+  }, [initialUsers]);
+
+  // Color theme variables applied structurally for the heritage sites
+  const COLORS = ["#F97316", "#3B82F6", "#10B981", "#8B5CF6", "#EC4899", "#6366F1"];
+
   const totalSiteVisits = mostVisitedLogs.reduce((acc, curr) => acc + curr.visit_count, 0);
-  const siteLineChartData = mostVisitedLogs.map((log) => ({
+  
+  const sitePieChartData = mostVisitedLogs.map((log, index) => ({
     name: log.sites?.name || `Site ${log.site_id}`,
-    percentage: totalSiteVisits > 0 ? Math.round((log.visit_count / totalSiteVisits) * 100) : 0,
-    visits: log.visit_count,
+    value: log.visit_count,
+    percentage: totalSiteVisits > 0 ? ((log.visit_count / totalSiteVisits) * 100).toFixed(1) : "0.0",
+    color: COLORS[index % COLORS.length]
   }));
 
   return (
@@ -159,11 +183,10 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
             <div className="flex items-center justify-between pb-8 mb-2">
               <div>
                 <h1 className="text-sm font-bold tracking-widest text-gray-900 uppercase">Timeframe Filter</h1>
-                <p className="text-xs font-medium text-gray-400 mt-0.5">Filters number of users</p>
+                <p className="text-xs font-medium text-gray-400 mt-0.5">Filters overview cards statistics</p>
               </div>
 
-              {/* TIMEFRAME DROPDOWN SELECTOR */}
-              <div className="relative inline-block px-4 ">
+              <div className="relative inline-block px-4">
                 <select
                   value={timeframe}
                   onChange={(e) => setTimeframe(e.target.value)}
@@ -185,11 +208,7 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
               </div>
             </div>
 
-            {/* Metrics Layout Columns */}
-            <div 
-              className="flex flex-row items-center justify-between w-full py-2 text-center"
-              style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}
-            >
+            <div className="flex flex-row items-center justify-between w-full py-2 text-center">
               <div className="flex-1 border-r border-gray-100 px-2">
                 <span className="text-4xl font-normal tracking-tight text-[#4ADE80] block">{overallUsersCount}</span>
                 <p className="mt-2 text-xs font-medium text-gray-500">Overall Users</p>
@@ -219,112 +238,117 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
           
           {/* Local Users PieChart */}
           <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">Piechart</span>
+            <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">Local Distribution</span>
             <div className="flex flex-col items-center justify-center py-6">
-              <div className="relative h-36 w-36 flex items-center justify-center">
-                <PieChart width={144} height={144}>
-                  <Pie
-                    data={localPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={54}
-                    outerRadius={56}
-                    startAngle={90}
-                    endAngle={-270}
-                    dataKey="value"
-                  >
-                    {localPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                    ))}
-                  </Pie>
-                </PieChart>
-                <div className="absolute top-1/2 left-1/2 h-[56px] w-[1px] -translate-y-full bg-gray-900" />
-                <div className="absolute top-1/2 left-1/2 h-[1px] w-[56px] bg-gray-900" />
+              <div className="relative h-40 w-40 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={localPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={48}
+                      outerRadius={64}
+                      paddingAngle={4}
+                      cornerRadius={10}
+                      startAngle={90}
+                      endAngle={-270}
+                      dataKey="value"
+                    >
+                      {localPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-xl font-bold text-gray-900">{localPercentage}%</span>
+                  <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">Local</span>
+                </div>
               </div>
-              <div className="mt-6 text-center space-y-0.5">
-                <p className="text-xs font-bold text-gray-900">{localCount}/{totalUsers}</p>
-                <p className="text-xs font-medium text-gray-400">{localPercentage}% Local Users</p>
+              <div className="mt-4 text-center">
+                <p className="text-xs font-bold text-gray-700">{localCount} of {totalUsers} total users</p>
               </div>
             </div>
           </Card>
 
           {/* Foreign Users PieChart */}
           <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">Piechart</span>
+            <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">Foreign Distribution</span>
             <div className="flex flex-col items-center justify-center py-6">
-              <div className="relative h-36 w-36 flex items-center justify-center">
-                <PieChart width={144} height={144}>
-                  <Pie
-                    data={foreignPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={54}
-                    outerRadius={56}
-                    startAngle={90}
-                    endAngle={-270}
-                    dataKey="value"
-                  >
-                    {foreignPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                    ))}
-                  </Pie>
-                </PieChart>
-                <div className="absolute top-1/2 left-1/2 h-[56px] w-[1px] -translate-y-full bg-gray-900" />
-                <div className="absolute top-1/2 left-1/2 h-[1px] w-[56px] bg-gray-900" />
+              <div className="relative h-40 w-40 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={foreignPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={48}
+                      outerRadius={64}
+                      paddingAngle={4}
+                      cornerRadius={10}
+                      startAngle={90}
+                      endAngle={-270}
+                      dataKey="value"
+                    >
+                      {foreignPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-xl font-bold text-gray-900">{foreignPercentage}%</span>
+                  <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">Foreign</span>
+                </div>
               </div>
-              <div className="mt-6 text-center space-y-0.5">
-                <p className="text-xs font-bold text-gray-900">{foreignersCount}/{totalUsers}</p>
-                <p className="text-xs font-medium text-gray-400">{foreignPercentage}% Foreign Users</p>
+              <div className="mt-4 text-center">
+                <p className="text-xs font-bold text-gray-700">{foreignersCount} of {totalUsers} total users</p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* --- DUAL ACTIVE USER METRIC COMPARISON GRAPH --- */}
+        {/* --- CHRONOLOGICAL MONTHLY ACTIVE USER METRIC COMPARISON GRAPH --- */}
         <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Active Users</h3>
-              <p className="text-xs font-medium text-gray-400 mt-0.5">Line Graph</p>
+              <h3 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Active Users Trend</h3>
+              <p className="text-xs font-medium text-gray-400 mt-0.5">Monthly breakdown for the current year</p>
             </div>
             
-            {/* Legend indicators */}
             <div className="flex items-center gap-4 text-[11px] font-semibold">
-              <div className="flex items-center gap-1.5 text-gray-900">
-                <span className="h-2 w-2 rounded-full bg-gray-900 block" /> Foreign Active
+              <div className="flex items-center gap-1.5 text-blue-600">
+                <span className="h-2 w-2 rounded-full bg-blue-600 block" /> Local Active
               </div>
-              <div className="flex items-center gap-1.5 text-gray-400">
-                <span className="h-2 w-2 rounded-full bg-gray-300 block" /> Local Active
+              <div className="flex items-center gap-1.5 text-teal-700">
+                <span className="h-2 w-2 rounded-full bg-teal-700 block" /> Foreign Active
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-900">
+                <span className="h-2 w-2 rounded-full bg-gray-900 block" /> Combined Total
               </div>
             </div>
           </div>
           
-          {/* Recharts LineGraph style (matching Activity Log chart) */}
-          <div className="flex-1 relative w-full min-h-[160px] pt-2 pl-2">
+          <div className="flex-1 relative w-full min-h-[260px] pt-2 pl-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={liveGraphDistribution.map((item, idx) => ({
-                  name: `Interval ${idx + 1}`,
-                  foreignActive: item.foreignHeight,
-                  localActive: item.localHeight,
-                }))}
-                margin={{ top: 10, right: 10, left: -25, bottom: 5 }}
+                data={activeUsersMonthlyData}
+                margin={{ top: 15, right: 20, left: -20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-
                 <XAxis
                   dataKey="name"
                   axisLine={true}
                   tickLine={false}
-                  tick={{ fontSize: 10, fill: "#6B7280" }}
+                  tick={{ fontSize: 11, fill: "#4B5563", fontWeight: 500 }}
                 />
-
                 <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 10, fill: "#6B7280" }}
+                  allowDecimals={false}
                 />
-
                 <Tooltip
                   cursor={{ stroke: "#9CA3AF", strokeWidth: 1, strokeDasharray: "3 3" }}
                   contentStyle={{
@@ -333,55 +357,61 @@ export function DashboardClient({ initialUsers, mostVisitedLogs }: DashboardClie
                     fontSize: "12px",
                     color: "#111827",
                   }}
-                  formatter={(value: number | undefined, name: string) => {
-                    const label = name === "foreignActive" ? "Foreign Active" : "Local Active";
-                    return [`${value ?? 0}`, label];
-                  }}
                 />
-
-                <Line
-                  type="monotone"
-                  dataKey="foreignActive"
-                  stroke="#111827"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "#111827", strokeWidth: 0 }}
-                  activeDot={{ r: 6 }}
-                />
-
                 <Line
                   type="monotone"
                   dataKey="localActive"
-                  stroke="#D1D5DB"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "#D1D5DB", strokeWidth: 0 }}
-                  activeDot={{ r: 6 }}
+                  name="Local Active"
+                  stroke="#2563EB"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#2563EB", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="foreignActive"
+                  name="Foreign Active"
+                  stroke="#0F766E"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#0F766E", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="totalActive"
+                  name="Total Active"
+                  stroke="#111827"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  dot={{ r: 2, fill: "#111827", strokeWidth: 0 }}
+                  activeDot={{ r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        {/* --- KULTURAR HERITAGE SITES ACTIVITY LOG SECTION --- */}
+        {/* --- HERITAGE SITES ACTIVITY LOG SECTION --- */}
         <div className="mt-8 space-y-4">
           <h2 className="text-2xl font-medium tracking-tight text-gray-900">Activity Log</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-Shows the activity log of users such as the most visited sites.          </p>
+            Shows the activity log of users such as the most visited sites.
+          </p>
           
-          {/* Even 50/50 split using md:grid-cols-2 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Left Card: Most Visited Sites List */}
-            <Card className="rounded-xl border-0  shadow-sm">
+            <Card className="rounded-xl border-0 shadow-sm bg-white">
               <CardContent className="p-6">
                 <h3 className="text-xl font-medium tracking-wide text-gray-900 mb-6">Most Visited Sites</h3>
-                
                 <ul className="space-y-3">
                   {mostVisitedLogs.length > 0 ? (
                     mostVisitedLogs.map((log, idx) => {
                       const siteName = log.sites?.name || `Site ${log.site_id}`;
-                      
                       return (
-                        <li key={idx} className="text-sm font-normal text-gray-800 break-words">
+                        <li key={idx} className="text-sm font-normal text-gray-800 break-words flex items-center gap-2">
+                          <span 
+                            className="h-2 w-2 rounded-full inline-block shrink-0" 
+                            style={{ backgroundColor: COLORS[idx % COLORS.length] }} 
+                          />
                           {siteName}
                         </li>
                       );
@@ -393,18 +423,22 @@ Shows the activity log of users such as the most visited sites.          </p>
               </CardContent>
             </Card>
 
-            {/* Right Card: Percentages and Recharts Line Graph */}
-            <Card className="rounded-xl border-0  shadow-sm">
+            <Card className="rounded-xl border-0 shadow-sm bg-white">
               <CardContent className="p-6 flex flex-col h-full">
-                {/* <h3 className="text-sm font-medium tracking-wide text-gray-900 mb-6">Line Graph of most visited sites</h3> */}
-                
-                <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1">
-                  {/* Left Column: Calculated Percentages */}
-                  <ul className="space-y-3 min-w-[140px]">
-                    {siteLineChartData.length > 0 ? (
-                      siteLineChartData.map((data, idx) => (
-                        <li key={idx} className="text-sm font-normal text-gray-800 break-words pr-4">
-                          {data.name} - {data.percentage}%
+                <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1 items-center">
+                  
+                  {/* Left Side: Dynamic List with exact matching Color Indicators */}
+                  <ul className="space-y-3 min-w-[140px] self-start sm:self-center">
+                    {sitePieChartData.length > 0 ? (
+                      sitePieChartData.map((data, idx) => (
+                        <li key={idx} className="text-sm font-normal text-gray-800 break-words pr-2 flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full block shrink-0" style={{ backgroundColor: data.color }} />
+                            <span className="font-bold text-gray-900">{data.percentage}%</span>
+                          </div>
+                          <span className="text-gray-400 text-[11px] font-medium ml-3.5 pl-px truncate max-w-[120px]">
+                            {data.name}
+                          </span>
                         </li>
                       ))
                     ) : (
@@ -412,58 +446,58 @@ Shows the activity log of users such as the most visited sites.          </p>
                     )}
                   </ul>
 
-                  {/* Right Column: Recharts Line Graph Integration */}
-                  <div className="flex-1 relative w-full min-h-[140px] pt-2 pl-2">
-                    {siteLineChartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={siteLineChartData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                          {/* Adds the horizontal lines from your example */}
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                          
-                          {/* Bottom labels (Site names) */}
-                          <XAxis 
-                            dataKey="name" 
-                            axisLine={true} 
-                            tickLine={false} 
-                            tick={{ fontSize: 10, fill: '#6B7280' }} 
-                          />
-                          
-                          {/* Side labels (Percentages) */}
-                          <YAxis 
-                            axisLine={false} 
-                            tickLine={false} 
-                            tick={{ fontSize: 10, fill: '#6B7280' }} 
-                          />
-                          
-                          <Tooltip 
-                            cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '3 3' }}
-                            contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '12px', color: '#111827' }}
-                            formatter={(value: number, name: string, props: any) => [`${value}% (${props.payload.visits} visits)`, 'Frequency']}
-                          />
-                          
-                          {/* Line styling adjusted to look like your example */}
-                          <Line 
-                            type="monotone" 
-                            dataKey="percentage" 
-                            stroke="#F97316" 
-                            strokeWidth={3}
-                            dot={{ r: 4, fill: "#F97316", strokeWidth: 0 }}
-                            activeDot={{ r: 6 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
+                  {/* Right Side: Exact Rounded Donut Matching Local/Foreign Ring Aesthetics */}
+                  <div className="flex-1 relative h-40 w-40 flex items-center justify-center">
+                    {sitePieChartData.length > 0 ? (
+                      <>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={sitePieChartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={48}
+                              outerRadius={64}
+                              paddingAngle={4}
+                              cornerRadius={10}
+                              startAngle={90}
+                              endAngle={-270}
+                              dataKey="value"
+                            >
+                              {sitePieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                borderRadius: "8px",
+                                border: "1px solid #E5E7EB",
+                                fontSize: "12px",
+                                color: "#111827",
+                              }}
+                              formatter={(value: unknown, name: string, props: any) => {
+                                const visits = props?.payload?.value ?? 0;
+                                return [`${visits} visits`, props?.payload?.name || name];
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        {/* Central text structure alignment */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-xl font-bold text-gray-900">{totalSiteVisits}</span>
+                          <span className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">Visits</span>
+                        </div>
+                      </>
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <span className="text-xs text-gray-400 pb-4">Awaiting visitor data</span>
+                        <span className="text-xs text-gray-400">Awaiting visitor data</span>
                       </div>
                     )}
-                    
                   </div>
-                </div>
 
+                </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
 

@@ -78,21 +78,23 @@ export default function EditCurratedTrailPage() {
       setError(null);
 
       try {
-        const [{ data: sites, error: sitesErr }, { data: trail, error: trailErr }, { data: stops, error: stopsErr }] =
-          await Promise.all([
-            supabase.from("sites").select("id, name"),
-            supabase
-              .from("trails")
-              .select("id, title, description, difficulty, duration, distance, image_url")
-              .eq("id", idNum)
-              .single(),
-            // expects trail_stops with site_id + notes and join to sites
-            supabase
-              .from("trail_stops")
-              .select("site_id, notes, sites(name)")
-              .eq("trail_id", idNum)
-              .order("id", { ascending: true }),
-          ]);
+        const [
+          { data: sites, error: sitesErr },
+          { data: trail, error: trailErr },
+          { data: stops, error: stopsErr }
+        ] = await Promise.all([
+          supabase.from("sites").select("id, name"),
+          supabase
+            .from("trails")
+            .select("id, title, description, difficulty, duration, distance, image_url")
+            .eq("id", idNum)
+            .single(),
+          supabase
+            .from("trail_stops")
+            .select("site_id, notes, stop_order, sites(name)")
+            .eq("trail_id", idNum)
+            .order("stop_order", { ascending: true }),
+        ]);
 
         if (!mounted) return;
         if (sitesErr) throw new Error(sitesErr.message);
@@ -112,12 +114,17 @@ export default function EditCurratedTrailPage() {
         // Pre-fill preview with existing image
         setImagePreview(t?.image_url ?? null);
 
+        // Safely extract the site name depending on how Supabase returns the join
         const mappedStops: TrailStop[] =
-          (stops as any[] | null | undefined)?.map((s) => ({
-            site_id: s.site_id,
-            site_name: s.sites?.name ?? "",
-            notes: s.notes ?? "",
-          })) ?? [];
+          (stops as any[] | null | undefined)?.map((s) => {
+            const siteName = Array.isArray(s.sites) ? s.sites[0]?.name : s.sites?.name;
+
+            return {
+              site_id: s.site_id,
+              site_name: siteName ?? "",
+              notes: s.notes ?? "",
+            };
+          }) ?? [];
 
         setTrailStops(mappedStops);
       } catch (e) {
@@ -135,6 +142,7 @@ export default function EditCurratedTrailPage() {
     };
   }, [idNum]);
 
+  // --- STOP MANAGEMENT FUNCTIONS ---
   const handleAddStop = () => {
     if (!selectedSiteId) return;
     const site = availableSites.find((s) => s.id.toString() === selectedSiteId);
@@ -154,6 +162,23 @@ export default function EditCurratedTrailPage() {
   const handleRemoveStop = (indexToRemove: number) => {
     setTrailStops((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
+
+  const handleMoveStop = (index: number, direction: 'up' | 'down') => {
+    const newStops = [...trailStops];
+    if (direction === 'up' && index > 0) {
+      [newStops[index - 1], newStops[index]] = [newStops[index], newStops[index - 1]];
+    } else if (direction === 'down' && index < newStops.length - 1) {
+      [newStops[index + 1], newStops[index]] = [newStops[index], newStops[index + 1]];
+    }
+    setTrailStops(newStops);
+  };
+
+  const handleUpdateNote = (index: number, newNotes: string) => {
+    const newStops = [...trailStops];
+    newStops[index].notes = newNotes;
+    setTrailStops(newStops);
+  };
+  // ---------------------------------
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,7 +218,6 @@ export default function EditCurratedTrailPage() {
 
   const handleStep3Submit = () => {
     setError(null);
-    // Allow keeping existing image
     if (!imagePreview) return setError("Please select an image");
     setStep("confirmation");
   };
@@ -217,6 +241,8 @@ export default function EditCurratedTrailPage() {
         formData.append("image", imageFile);
       }
 
+      // The backend will receive this ordered array. 
+      // It should delete existing stops for this trail_id and insert these with stop_order = index + 1
       formData.append("trailStops", JSON.stringify(trailStops));
 
       const response = await fetch("/api/trails/update-trail", {
@@ -268,7 +294,7 @@ export default function EditCurratedTrailPage() {
         <Card className="border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Route Map & Stops</CardTitle>
-            <CardDescription>Select the sites that make up this curated trail.</CardDescription>
+            <CardDescription>Select and organize the sites that make up this curated trail.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-900/50 space-y-4">
@@ -280,7 +306,7 @@ export default function EditCurratedTrailPage() {
                   className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 >
                   <option value="" disabled>
-                    -- Choose a site --
+                    -- Choose a site to add --
                   </option>
                   {availableSites.map((site) => (
                     <option key={site.id} value={site.id}>
@@ -307,30 +333,63 @@ export default function EditCurratedTrailPage() {
 
             {trailStops.length > 0 ? (
               <div className="space-y-3 pt-4">
-                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Current Route:</h4>
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Current Route (Order matters):</h4>
                 {trailStops.map((stop, idx) => (
                   <div
                     key={`${stop.site_id}-${idx}`}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-2xl gap-4"
+                    className="flex flex-col p-4 border border-slate-200 dark:border-slate-800 rounded-2xl gap-3 bg-white dark:bg-slate-900"
                   >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-400">
+                    {/* Top Row: Info and Reorder Buttons */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
                           {idx + 1}
                         </span>
-                        <span className="font-medium text-slate-900 dark:text-slate-100">{stop.site_name}</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{stop.site_name}</span>
                       </div>
-                      {stop.notes ? <p className="text-xs text-slate-500 mt-2 pl-8">{stop.notes}</p> : null}
+                      
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-lg"
+                          onClick={() => handleMoveStop(idx, 'up')}
+                          disabled={idx === 0 || loading}
+                          title="Move Up"
+                        >
+                          ↑
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-lg"
+                          onClick={() => handleMoveStop(idx, 'down')}
+                          disabled={idx === trailStops.length - 1 || loading}
+                          title="Move Down"
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveStop(idx)}
+                          className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-lg ml-2"
+                          disabled={loading}
+                        >
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveStop(idx)}
-                      className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl"
-                      disabled={loading}
-                    >
-                      Remove
-                    </Button>
+
+                    {/* Bottom Row: Editable Notes Input */}
+                    <div className="pl-10 pr-2">
+                      <Input
+                        placeholder="Add notes for this stop..."
+                        value={stop.notes}
+                        onChange={(e) => handleUpdateNote(idx, e.target.value)}
+                        className="rounded-xl h-9 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 focus:border-slate-300 transition-colors"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -549,4 +608,3 @@ function StepBubble({ active, num, label }: { active: boolean; num: number; labe
     </div>
   );
 }
-

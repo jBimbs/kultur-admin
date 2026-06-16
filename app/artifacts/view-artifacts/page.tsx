@@ -54,7 +54,6 @@ export default function ArtifactsPage() {
 
       const { data, error: fetchError } = await queryBuilder.range(start, end);
 
-
       if (!mounted) return;
 
       if (fetchError) {
@@ -84,10 +83,11 @@ export default function ArtifactsPage() {
 
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
-
   return (
-    <div className="min-h-screen  text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        
+        {/* Header Block Section */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -100,31 +100,33 @@ export default function ArtifactsPage() {
               Showcase artifact records and maintain the inventory of cultural objects from your backend.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="w-full sm:w-80">
-              <input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setPage(0);
-                }}
-                placeholder="Search artifacts…"
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Link href="/artifacts/add-artifact">
-                <Button>Add Artifact</Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline">Back to dashboard</Button>
-              </Link>
-            </div>
+          
+          <div className="flex gap-2 shrink-0">
+            <Link href="/artifacts/add-artifact">
+              <Button>Add Artifact</Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline">Back to dashboard</Button>
+            </Link>
           </div>
-
         </div>
 
+        {/* Search bar wrapper aligned to the right side */}
+        <div className="mb-6 flex w-full justify-end">
+          <div className="w-full sm:w-80">
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(0);
+              }}
+              placeholder="Search artifacts…"
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+          </div>
+        </div>
+
+        {/* Main Grid View */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             <div className="col-span-full py-8 text-center">Loading artifacts…</div>
@@ -191,6 +193,7 @@ export default function ArtifactsPage() {
           )}
         </div>
 
+        {/* Pagination Block footer controls */}
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button variant="outline" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0}>
             Previous

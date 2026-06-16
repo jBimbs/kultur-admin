@@ -76,7 +76,7 @@ export default function AddCurratedTrailPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // --- Handlers ---
+  // --- Stop Management Handlers ---
   const handleAddStop = () => {
     if (!selectedSiteId) return;
 
@@ -97,6 +97,23 @@ export default function AddCurratedTrailPage() {
   const handleRemoveStop = (indexToRemove: number) => {
     setTrailStops(trailStops.filter((_, index) => index !== indexToRemove));
   };
+
+  const handleMoveStop = (index: number, direction: 'up' | 'down') => {
+    const newStops = [...trailStops];
+    if (direction === 'up' && index > 0) {
+      [newStops[index - 1], newStops[index]] = [newStops[index], newStops[index - 1]];
+    } else if (direction === 'down' && index < newStops.length - 1) {
+      [newStops[index + 1], newStops[index]] = [newStops[index], newStops[index + 1]];
+    }
+    setTrailStops(newStops);
+  };
+
+  const handleUpdateNote = (index: number, newNotes: string) => {
+    const newStops = [...trailStops];
+    newStops[index].notes = newNotes;
+    setTrailStops(newStops);
+  };
+  // ---------------------------------
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,7 +250,7 @@ export default function AddCurratedTrailPage() {
         <Card className="border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Route Map & Stops</CardTitle>
-            <CardDescription>Select the sites that make up this curated trail.</CardDescription>
+            <CardDescription>Select and organize the sites that make up this curated trail.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             
@@ -245,7 +262,7 @@ export default function AddCurratedTrailPage() {
                   onChange={(e) => setSelectedSiteId(e.target.value)}
                   className="h-10 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 >
-                  <option value="" disabled>-- Choose a site --</option>
+                  <option value="" disabled>-- Choose a site to add --</option>
                   {availableSites.map((site) => (
                     <option key={site.id} value={site.id}>
                       {site.name}
@@ -266,7 +283,7 @@ export default function AddCurratedTrailPage() {
                 type="button" 
                 variant="secondary" 
                 onClick={handleAddStop}
-                disabled={!selectedSiteId}
+                disabled={!selectedSiteId || loading}
                 className="w-full rounded-2xl"
               >
                 Add Stop to Route
@@ -275,21 +292,63 @@ export default function AddCurratedTrailPage() {
 
             {trailStops.length > 0 ? (
               <div className="space-y-3 pt-4">
-                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Current Route:</h4>
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Current Route (Order matters):</h4>
                 {trailStops.map((stop, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-2xl gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
+                  <div
+                    key={`${stop.site_id}-${idx}`}
+                    className="flex flex-col p-4 border border-slate-200 dark:border-slate-800 rounded-2xl gap-3 bg-white dark:bg-slate-900"
+                  >
+                    {/* Top Row: Info and Reorder Buttons */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
                           {idx + 1}
                         </span>
-                        <span className="font-medium text-slate-900 dark:text-slate-100">{stop.site_name}</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{stop.site_name}</span>
                       </div>
-                      {stop.notes && <p className="text-xs text-slate-500 mt-2 pl-8">{stop.notes}</p>}
+                      
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-lg"
+                          onClick={() => handleMoveStop(idx, 'up')}
+                          disabled={idx === 0 || loading}
+                          title="Move Up"
+                        >
+                          ↑
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-lg"
+                          onClick={() => handleMoveStop(idx, 'down')}
+                          disabled={idx === trailStops.length - 1 || loading}
+                          title="Move Down"
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveStop(idx)}
+                          className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-lg ml-2"
+                          disabled={loading}
+                        >
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleRemoveStop(idx)} className="text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-xl">
-                      Remove
-                    </Button>
+
+                    {/* Bottom Row: Editable Notes Input */}
+                    <div className="pl-10 pr-2">
+                      <Input
+                        placeholder="Add notes for this stop..."
+                        value={stop.notes}
+                        onChange={(e) => handleUpdateNote(idx, e.target.value)}
+                        className="rounded-xl h-9 text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 border-transparent hover:border-slate-200 focus:border-slate-300 transition-colors"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -304,7 +363,7 @@ export default function AddCurratedTrailPage() {
             )}
 
             <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-              <Button onClick={handleStep1Submit} className="rounded-2xl px-8">
+              <Button onClick={handleStep1Submit} className="rounded-2xl px-8" disabled={loading}>
                 Next: Details
               </Button>
             </div>
@@ -382,10 +441,10 @@ export default function AddCurratedTrailPage() {
             )}
 
             <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <Button onClick={() => setStep("stops")} variant="outline" className="flex-1 rounded-2xl">
+              <Button onClick={() => setStep("stops")} variant="outline" className="flex-1 rounded-2xl" disabled={loading}>
                 Back to Stops
               </Button>
-              <Button onClick={handleStep2Submit} className="flex-1 rounded-2xl">
+              <Button onClick={handleStep2Submit} className="flex-1 rounded-2xl" disabled={loading}>
                 Next: Upload Image
               </Button>
             </div>
@@ -459,10 +518,10 @@ export default function AddCurratedTrailPage() {
             )}
 
             <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <Button onClick={() => setStep("details")} variant="outline" className="flex-1 rounded-2xl">
+              <Button onClick={() => setStep("details")} variant="outline" className="flex-1 rounded-2xl" disabled={loading}>
                 Back to Details
               </Button>
-              <Button onClick={handleStep3Submit} disabled={!imageFile} className="flex-1 rounded-2xl">
+              <Button onClick={handleStep3Submit} disabled={!imageFile || loading} className="flex-1 rounded-2xl">
                 Next: Review
               </Button>
             </div>

@@ -31,12 +31,9 @@ export default function CurratedTrailsPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
 
   const [page, setPage] = useState(0);
-
   const pageSize = 6;
   const [totalCount, setTotalCount] = useState<number | null>(null);
-
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
 
   useEffect(() => {
     let mounted = true;
@@ -61,9 +58,7 @@ export default function CurratedTrailsPage() {
         queryBuilder = queryBuilder.eq("difficulty", difficultyFilter);
       }
 
-
       const { data, error: fetchError } = await queryBuilder.range(start, end);
-
 
       if (!mounted) return;
 
@@ -92,13 +87,13 @@ export default function CurratedTrailsPage() {
     };
   }, [page, query, difficultyFilter]);
 
-
-
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
   return (
-    <div className="min-h-screen  text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        
+        {/* Header Block Section */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -112,7 +107,19 @@ export default function CurratedTrailsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex gap-2 shrink-0">
+            <Link href="/currated-trails/add-currated-trail">
+              <Button>Add Trail</Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline">Back to dashboard</Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Search bar and Filter Controls aligned cleanly to the right */}
+        <div className="mb-6 flex w-full justify-end">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <div className="w-full sm:w-80">
               <input
                 value={query}
@@ -138,21 +145,12 @@ export default function CurratedTrailsPage() {
                 <option value="Easy">Easy</option>
                 <option value="Moderate">Moderate</option>
                 <option value="Hard">Hard</option>
-
               </select>
             </div>
-
-
-            <Link href="/currated-trails/add-currated-trail">
-              <Button>Add Trail</Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline">Back to dashboard</Button>
-            </Link>
           </div>
         </div>
 
-
+        {/* Main Grid View */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             <div className="col-span-full text-center py-8">Loading trails…</div>
@@ -169,22 +167,18 @@ export default function CurratedTrailsPage() {
                   <>
                     {t.image_url ? (
                       <img
-                        src={(() => {
-                          const url = t.image_url ?? "";
-                          // If the DB already contains a full URL (e.g. https://...), use it as-is.
-                          // Otherwise treat it as an absolute/relative asset path.
-                          return /^https?:\/\//i.test(url) ? url : url;
-                        })()}
+                        src={t.image_url}
                         alt={t.title || "trail image"}
                         className="h-40 w-full object-cover"
                       />
-                    ) : null}
-
+                    ) : (
+                      <div className="h-40 w-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs">No Image</div>
+                    )}
 
                     <CardHeader>
                       <div className="flex items-center justify-between gap-2">
                         <CardTitle className="truncate">{t.title}</CardTitle>
-                        <span className="text-xs font-mono text-slate-400"></span>
+                        <span className="text-xs font-mono text-slate-400">#{t.id}</span>
                       </div>
                       <CardDescription>
                         {t.difficulty ? `Difficulty: ${t.difficulty}` : ""}
@@ -192,8 +186,6 @@ export default function CurratedTrailsPage() {
                         {t.distance ? ` • Distance: ${t.distance}` : ""}
                       </CardDescription>
                     </CardHeader>
-
-                    
 
                     <CardFooter className="flex items-center justify-between gap-2">
                       <div className="flex gap-2">
@@ -240,6 +232,7 @@ export default function CurratedTrailsPage() {
           )}
         </div>
 
+        {/* Pagination Block footer controls */}
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button
             variant="outline"
@@ -262,4 +255,3 @@ export default function CurratedTrailsPage() {
     </div>
   );
 }
-

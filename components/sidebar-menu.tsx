@@ -65,12 +65,12 @@ export function SidebarMenu() {
   }
 
   return (
-    <aside className="border-r border-slate-200 bg-[#7BB662] p-6 dark:border-slate-800 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:flex-shrink-0">
+    <aside className="border-r border-slate-200 bg-[#142B28] p-6 dark:border-slate-800 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:flex-shrink-0">
       <div className="flex h-full flex-col justify-between">
         <div className="space-y-8">
         <div>
           <div className="mb-6">
-            <img src="/Logo.png" alt="KulturAR Logo" className="h-20 w-auto" />
+            <img src="/Logo.png" alt="KulturAR Logo" className="h-auto w-50" />
           </div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
             Admin

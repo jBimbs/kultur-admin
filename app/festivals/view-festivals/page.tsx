@@ -121,8 +121,10 @@ export default function FestivalsPage() {
   const totalPages = totalCount ? Math.ceil(totalCount / pageSize) : 0;
 
   return (
-    <div className="min-h-screen  text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        
+        {/* Header Block Section */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -136,7 +138,19 @@ export default function FestivalsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex gap-2 shrink-0">
+            <Link href="/festivals/add-festival">
+              <Button>Add Festival</Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline">Back to dashboard</Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Filter Row Section Aligned cleanly to the right side */}
+        <div className="mb-6 flex w-full justify-end">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <div className="w-full sm:w-80">
               <input
                 value={query}
@@ -156,7 +170,7 @@ export default function FestivalsPage() {
                   setCityFilter(e.target.value);
                   setPage(0);
                 }}
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none shadow-sm focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
               >
                 <option value="all">All cities</option>
                 {CITY_OPTIONS.map((c) => (
@@ -166,16 +180,10 @@ export default function FestivalsPage() {
                 ))}
               </select>
             </div>
-
-            <Link href="/festivals/add-festival">
-              <Button>Add Festival</Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline">Back to dashboard</Button>
-            </Link>
           </div>
         </div>
 
+        {/* Main Content Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             <div className="col-span-full text-center py-8">Loading festivals…</div>
@@ -196,7 +204,9 @@ export default function FestivalsPage() {
                         alt={f.name || "festival image"}
                         className="h-40 w-full object-cover"
                       />
-                    ) : null}
+                    ) : (
+                      <div className="h-40 w-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs">No Image</div>
+                    )}
                     <CardHeader>
                       <div className="flex items-center justify-between gap-2">
                         <CardTitle className="truncate">{f.name}</CardTitle>
@@ -251,6 +261,7 @@ export default function FestivalsPage() {
           )}
         </div>
 
+        {/* Pagination Block footer controls */}
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button
             variant="outline"
@@ -273,4 +284,3 @@ export default function FestivalsPage() {
     </div>
   );
 }
-

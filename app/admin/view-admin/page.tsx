@@ -92,7 +92,9 @@ export default function ViewAdminPage() {
   }, [totalCount, pageSize]);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
+      
+      {/* Header Block Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -104,7 +106,7 @@ export default function ViewAdminPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Link href="/dashboard">
             <Button variant="outline">Back to dashboard</Button>
           </Link>
@@ -114,17 +116,21 @@ export default function ViewAdminPage() {
         </div>
       </div>
 
-      <div className="mt-2 bg-white">
-        <Input
-          placeholder="Search by city, first name, last name, or suffix"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-        />
+      {/* Filter Row Section Aligned cleanly to the right side */}
+      <div className="flex w-full justify-end">
+        <div className="w-full sm:w-96">
+          <Input
+            placeholder="Search by city, first name, last name, or suffix…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+          />
+        </div>
       </div>
 
+      {/* Main Content Grid */}
       <div>
         {loading ? (
           <div className="text-center py-8">Loading admins…</div>
@@ -151,20 +157,12 @@ export default function ViewAdminPage() {
                     <CardContent className="space-y-2">
                       <div className="text-sm">
                         <span className="text-slate-500">Filipino/Foreigner:</span>{" "}
-<span className="font-medium">{a.origin_type || "Unknown"}</span>                      </div>
-                      {/* <div className="text-sm">
-                        <span className="text-slate-500">First name:</span>{" "}
-                        <span className="font-medium">{a.first_name || "—"}</span>
+                        <span className="font-medium">{a.origin_type || "Unknown"}</span>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-slate-500">Last name:</span>{" "}
-                        <span className="font-medium">{a.last_name || "—"}</span>
-                      </div> */}
                       <div className="text-sm">
                         <span className="text-slate-500">Country:</span>{" "}
                         <span className="font-medium">{a.country || "—"}</span>
                       </div>
-                      
                       <div className="text-sm">
                         <span className="text-slate-500">Suffix:</span>{" "}
                         <span className="font-medium">{a.suffix || "—"}</span>
@@ -175,15 +173,16 @@ export default function ViewAdminPage() {
               })}
             </div>
 
+            {/* Pagination controls footer panel */}
             <div className="mt-8 grid grid-cols-3 items-center gap-4">
               <div className="text-sm text-slate-600">
-                Showing {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalCount ?? 0)} of {totalCount ?? "?"}
+                Showing {totalCount === 0 ? 0 : (page * pageSize) + 1} - {Math.min((page + 1) * pageSize, totalCount ?? 0)} of {totalCount ?? "?"}
               </div>
               <div className="flex items-center gap-2 justify-center">
                 <Button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0} variant="outline">
                   Previous
                 </Button>
-                <div className="text-sm text-slate-600">
+                <div className="text-sm text-slate-600 min-w-[5rem] text-center">
                   Page {page + 1} of {totalPages || 1}
                 </div>
                 <Button
@@ -193,7 +192,7 @@ export default function ViewAdminPage() {
                   Next
                 </Button>
               </div>
-              <div />
+              <div className="hidden sm:block" />
             </div>
           </>
         )}
@@ -212,4 +211,3 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 
   return debounced;
 }
-

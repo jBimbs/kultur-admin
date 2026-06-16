@@ -29,7 +29,6 @@ export default function HistoricalSitesPage() {
   const [citiesLoading, setCitiesLoading] = useState(false);
 
   const pageSize = 6;
-
   const [totalCount, setTotalCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -56,9 +55,6 @@ export default function HistoricalSitesPage() {
         setCitiesLoading(false);
       }
 
-
-
-
       const start = page * pageSize;
       const end = start + pageSize - 1;
 
@@ -66,7 +62,6 @@ export default function HistoricalSitesPage() {
 
       if (debouncedSearch.trim()) {
         const pattern = `%${debouncedSearch.trim()}%`;
-        // search across name, city, Category
         query = query.or(`name.ilike.${pattern},city.ilike.${pattern},Category.ilike.${pattern}`);
       }
 
@@ -77,7 +72,6 @@ export default function HistoricalSitesPage() {
       if (categoryFilter !== "all") {
         query = query.eq("Category", categoryFilter);
       }
-
 
       const { data, error } = await query.range(start, end);
 
@@ -106,7 +100,6 @@ export default function HistoricalSitesPage() {
         countQuery = countQuery.eq("Category", categoryFilter);
       }
 
-
       const { count, error: countError } = await countQuery;
 
       if (mounted) {
@@ -124,7 +117,6 @@ export default function HistoricalSitesPage() {
     };
   }, [page, debouncedSearch, cityFilter, categoryFilter]);
 
-
   // debounce search input
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -135,7 +127,8 @@ export default function HistoricalSitesPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* Header Block Section */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
             Content Management
@@ -147,29 +140,28 @@ export default function HistoricalSitesPage() {
             View and maintain the list of sites, monuments, and locations that are important to local heritage.
           </p>
         </div>
-        <Link href="/dashboard">
-          <Button variant="outline">Back to dashboard</Button>
-        </Link>
+
+        {/* Combined Action Buttons Row */}
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Link href="/historical-sites/add-site">
+            <Button>Add Site</Button>
+          </Link>
+          <Link href="/historical-sites/edit-sites">
+            <Button variant="outline">Edit Sites</Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button variant="outline">Back to dashboard</Button>
+          </Link>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Link href="/historical-sites/add-site">
-          <Button className="w-full py-1 text-sm" variant="outline">Add Site</Button>
-        </Link>
-        <Link href="/historical-sites/edit-sites">
-          <Button className="w-full py-1 text-sm" variant="outline">
-            Edit Sites
-          </Button>
-        </Link>
-      </div>
-
-      <div className="mt-6 py-8">
-        <div className="flex flex-col bg-white gap-2 sm:flex-row sm:items-center">
+      {/* Filter Row Section Aligned cleanly to the right side */}
+      <div className="mb-6 flex w-full justify-end">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Input
-            className="w-full sm:max-w-sm"
-            placeholder="Search name"
+            className="w-full sm:w-80"
+            placeholder="Search name, city, or category…"
             value={search}
-
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
@@ -177,7 +169,7 @@ export default function HistoricalSitesPage() {
           />
 
           <select
-            className="h-8 w-full sm:w-56 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="h-10 w-full sm:w-56 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800"
             value={cityFilter}
             onChange={(e) => {
               setCityFilter(e.target.value);
@@ -193,9 +185,8 @@ export default function HistoricalSitesPage() {
             ))}
           </select>
 
-
           <select
-            className="h-8 w-full sm:w-56 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="h-10 w-full sm:w-56 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800"
             value={categoryFilter}
             onChange={(e) => {
               setCategoryFilter(e.target.value);
@@ -211,7 +202,7 @@ export default function HistoricalSitesPage() {
         </div>
       </div>
 
-
+      {/* Main Content Grid */}
       <div>
         {loading ? (
           <div className="text-center py-8">Loading sites…</div>
@@ -232,7 +223,7 @@ export default function HistoricalSitesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800" />
+                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs">No Image</div>
                     )}
                   </div>
                   <CardHeader>
@@ -241,7 +232,7 @@ export default function HistoricalSitesPage() {
                         <CardTitle className="text-lg">{site.name || "Unnamed Site"}</CardTitle>
                         <CardDescription>{site.Category || "No category"}</CardDescription>
                       </div>
-                      <div className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                      <div className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded shrink-0">
                         {site.city || "Unknown"}
                       </div>
                     </div>
@@ -255,15 +246,16 @@ export default function HistoricalSitesPage() {
               ))}
             </div>
 
-            <div className="mt-8 grid grid-cols-3 items-center gap-4">
-              <div className="text-sm text-slate-600">
-                Showing {(page * pageSize) + 1} - {Math.min((page + 1) * pageSize, totalCount ?? 0)} of {totalCount ?? "?"}
+            {/* Pagination Grid View footer block */}
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-slate-600 text-center sm:text-left">
+                Showing {totalCount === 0 ? 0 : (page * pageSize) + 1} - {Math.min((page + 1) * pageSize, totalCount ?? 0)} of {totalCount ?? "?"}
               </div>
               <div className="flex items-center gap-2 justify-center">
                 <Button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page <= 0} variant="outline">
                   Previous
                 </Button>
-                <div className="text-sm text-slate-600">
+                <div className="text-sm text-slate-600 min-w-[5rem] text-center">
                   Page {page + 1} of {totalPages || 1}
                 </div>
                 <Button
@@ -273,7 +265,7 @@ export default function HistoricalSitesPage() {
                   Next
                 </Button>
               </div>
-              <div />
+              <div className="hidden sm:block w-24" /> {/* Visual Balance spacer */}
             </div>
           </>
         )}

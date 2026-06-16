@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardHeader,
@@ -13,7 +12,6 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-
 
 type Cuisine = {
   id: number;
@@ -55,7 +53,6 @@ export default function LocalCuisinesPage() {
     "Ternate",
     "Maragondon",
   ];
-
 
   useEffect(() => {
     let mounted = true;
@@ -103,14 +100,11 @@ export default function LocalCuisinesPage() {
   // Filter cuisines based on dropdown (city) and search query
   useEffect(() => {
     const normalizedCity = cityFilter === "All" ? "" : cityFilter.toLowerCase();
-
     const query = searchQuery.trim().toLowerCase();
 
     const filtered = cuisines.filter((c) => {
       const cityOrigin = (c.city_origin ?? "").toLowerCase();
-
-      const matchesCity =
-        normalizedCity === "" ? true : cityOrigin === normalizedCity;
+      const matchesCity = normalizedCity === "" ? true : cityOrigin === normalizedCity;
 
       if (!query) return matchesCity;
 
@@ -125,7 +119,6 @@ export default function LocalCuisinesPage() {
     setFilteredCuisines(filtered);
   }, [searchQuery, cityFilter, cuisines]);
 
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setPage(0); // Reset to first page when searching
@@ -136,6 +129,8 @@ export default function LocalCuisinesPage() {
   return (
     <div className="min-h-screen text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        
+        {/* Header Block Section */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -148,7 +143,7 @@ export default function LocalCuisinesPage() {
               Maintain food and cuisine records for local dishes, ingredients, and restaurant recommendations.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Link href="/local-cuisines/add-local-cuisines">
               <Button>Add Cuisine</Button>
             </Link>
@@ -158,14 +153,13 @@ export default function LocalCuisinesPage() {
           </div>
         </div>
 
-        <div className="mb-6 bg-white">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {/* Search bar and Filter Controls aligned cleanly to the right */}
+        <div className="mb-6 flex w-full justify-end">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <div className="w-full sm:w-80">
               <input
                 value={searchQuery}
-                onChange={(e) => {
-                  handleSearch(e.target.value);
-                }}
+                onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search cuisines…"
                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:placeholder:text-slate-500"
               />
@@ -192,9 +186,7 @@ export default function LocalCuisinesPage() {
           </div>
         </div>
 
-
-
-
+        {/* Main Grid View */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             <div className="col-span-full py-8 text-center">Loading cuisines…</div>
@@ -207,7 +199,6 @@ export default function LocalCuisinesPage() {
                 : "No cuisines found."}
             </div>
           ) : (
-
             filteredCuisines.map((c) => (
               <Card key={c.id} className="overflow-hidden">
                 {c.image_url ? (
@@ -266,6 +257,7 @@ export default function LocalCuisinesPage() {
           )}
         </div>
 
+        {/* Pagination Block footer controls */}
         <div className="mt-6 flex items-center justify-center gap-3">
           {!searchQuery && cityFilter === "All" && (
             <>
@@ -288,8 +280,8 @@ export default function LocalCuisinesPage() {
               Found {filteredCuisines.length} result{filteredCuisines.length !== 1 ? "s" : ""}
             </div>
           )}
-
         </div>
+
       </div>
     </div>
   );
