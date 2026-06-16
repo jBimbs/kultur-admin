@@ -506,9 +506,9 @@ export function DashboardClient({
                                 fontSize: "12px",
                                 color: "#111827",
                               }}
-                              formatter={(value: ValueType, name: NameType, props: any) => {
-                                const visits = props?.payload?.value ?? 0;
-                                const displayName = props?.payload?.name || (name as string) || "";
+                              formatter={(value: any, name: any, props: any) => {
+                                const visits = props?.payload?.value ?? value ?? 0;
+                                const displayName = props?.payload?.name || name || "Unknown Site";
                                 return [`${visits} visits`, displayName];
                               }}
                             />
@@ -622,9 +622,9 @@ export function DashboardClient({
                                 fontSize: "12px",
                                 color: "#111827",
                               }}
-                              formatter={(value: ValueType, name: NameType, props: any) => {
-                                const saves = props?.payload?.value ?? 0;
-                                const displayName = props?.payload?.name || (name as string) || "";
+                              formatter={(value: any, name: any, props: any) => {
+                                const saves = props?.payload?.value ?? value ?? 0;
+                                const displayName = props?.payload?.name || name || "Unknown Item";
                                 return [`${saves} saves`, displayName];
                               }}
                             />
