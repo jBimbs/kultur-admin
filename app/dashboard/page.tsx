@@ -58,7 +58,6 @@ export default async function DashboardPage() {
       initialUsers={realizedUsers} 
       // @ts-ignore
       mostVisitedLogs={mostVisitedData || []} 
-      mostSavedItems={[]} // <-- Add this to satisfy the required prop type
     />
   );
 }

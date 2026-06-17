@@ -116,7 +116,6 @@ export function DashboardClient({
       } else if (profilesData && profilesData.length > 0) {
         
         // Find the most recent year in your database instead of using the system clock.
-        // Since your dummy data is in 2026, this ensures the chart actually displays it.
         const years = profilesData.map(p => {
           const d = p.updated_at || p.created_at;
           return d ? new Date(d).getFullYear() : new Date().getFullYear();
