@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { createBrowserClient } from "@supabase/ssr";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   PieChart, 
@@ -14,8 +15,8 @@ import {
   YAxis,
   CartesianGrid
 } from "recharts";
-import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
+// --- TYPE DEFINITIONS ---
 type UserRecord = {
   id: string;
   origin_type: string | null;
@@ -35,27 +36,141 @@ type VisitLog = {
 type SavedItemLog = {
   item_id: number;
   item_name: string;
-  item_type: string; // 'sites' | 'festivals' | 'artifacts' | 'cuisines'
+  item_type: string;
   save_count: number;
 };
 
 type DashboardClientProps = {
   initialUsers: UserRecord[];
   mostVisitedLogs: VisitLog[];
-  mostSavedItems: SavedItemLog[];
 };
 
 export function DashboardClient({ 
   initialUsers = [], 
-  mostVisitedLogs = [], 
-  mostSavedItems = [] // Fallback assignment to prevent "not iterable" crashes
+  mostVisitedLogs = [] 
 }: DashboardClientProps) {
   const [timeframe, setTimeframe] = useState("this_year");
+  const [topSavedItems, setTopSavedItems] = useState<SavedItemLog[]>([]);
+  
+  // Default state for the Line Graph
+  const [activeUsersMonthlyData, setActiveUsersMonthlyData] = useState([
+    { name: "Jan", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Feb", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Mar", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Apr", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "May", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Jun", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Jul", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Aug", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Sep", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Oct", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Nov", localActive: 0, foreignActive: 0, totalActive: 0 },
+    { name: "Dec", localActive: 0, foreignActive: 0, totalActive: 0 },
+  ]);
+  
+  // Initialize the modern Supabase SSR browser client
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  // 1. Calculate overall metrics independent of dropdown filter bounds
+  // --- DYNAMIC DATA FETCHING ---
+  useEffect(() => {
+    async function fetchDashboardData() {
+      // 1. Fetch Top Saved Items
+      const { data: savedData, error: savedError } = await supabase
+        .from('saved_items')
+        .select('item_id, item_name, item_type');
+
+      if (savedError) {
+        console.error("Error fetching saved items:", savedError);
+      } else if (savedData) {
+        const aggregatedData = savedData.reduce((acc: Record<number, SavedItemLog>, curr) => {
+          const key = curr.item_id;
+          if (!acc[key]) {
+            acc[key] = { 
+              item_id: curr.item_id, 
+              item_name: curr.item_name, 
+              item_type: curr.item_type, 
+              save_count: 0 
+            };
+          }
+          acc[key].save_count += 1;
+          return acc;
+        }, {});
+
+        const sortedTop5 = Object.values(aggregatedData)
+          .sort((a, b) => b.save_count - a.save_count)
+          .slice(0, 5);
+
+        setTopSavedItems(sortedTop5);
+      }
+
+      // 2. Fetch Profiles for Active Users Line Graph
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('origin_type, updated_at, created_at');
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+      } else if (profilesData && profilesData.length > 0) {
+        
+        // Find the most recent year in your database instead of using the system clock.
+        // Since your dummy data is in 2026, this ensures the chart actually displays it.
+        const years = profilesData.map(p => {
+          const d = p.updated_at || p.created_at;
+          return d ? new Date(d).getFullYear() : new Date().getFullYear();
+        });
+        const targetYear = Math.max(...years);
+
+        // Create a fresh array of buckets to populate
+        const monthlyBuckets = [
+          { name: "Jan", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Feb", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Mar", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Apr", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "May", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Jun", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Jul", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Aug", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Sep", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Oct", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Nov", localActive: 0, foreignActive: 0, totalActive: 0 },
+          { name: "Dec", localActive: 0, foreignActive: 0, totalActive: 0 },
+        ];
+
+        profilesData.forEach((profile) => {
+          // Track recent activity via updated_at, fallback to created_at
+          const activeDateString = profile.updated_at || profile.created_at;
+          if (!activeDateString) return;
+
+          const date = new Date(activeDateString);
+
+          if (date.getFullYear() === targetYear) {
+            const monthIndex = date.getMonth(); 
+
+            if (monthIndex >= 0 && monthIndex < 12) {
+              if (profile.origin_type === "filipino") {
+                monthlyBuckets[monthIndex].localActive += 1;
+              } else if (profile.origin_type === "foreigner") {
+                monthlyBuckets[monthIndex].foreignActive += 1;
+              }
+              monthlyBuckets[monthIndex].totalActive += 1;
+            }
+          }
+        });
+
+        setActiveUsersMonthlyData(monthlyBuckets);
+      }
+    }
+
+    fetchDashboardData();
+  }, [supabase]);
+
+
+  // --- EXISTING DASHBOARD METRICS CALCULATION (TOP CARDS) ---
   const overallUsersCount = initialUsers.length;
 
-  // 2. Dynamic Timeframe Range Evaluator for top card summary blocks
   const filteredMetrics = useMemo(() => {
     const now = new Date();
     
@@ -90,7 +205,6 @@ export function DashboardClient({
     });
 
     const totalUsers = usersInTimeframe.length;
-    
     const foreignersInTimeframe = usersInTimeframe.filter((u) => u.origin_type === "foreigner");
     const localsInTimeframe = usersInTimeframe.filter((u) => u.origin_type === "filipino");
 
@@ -123,7 +237,6 @@ export function DashboardClient({
   const localPercentage = totalUsers > 0 ? ((localCount / totalUsers) * 100).toFixed(1) : "0.0";
   const foreignPercentage = totalUsers > 0 ? ((foreignersCount / totalUsers) * 100).toFixed(1) : "0.0";
 
-  // Data configured for Distribution Donut Charts
   const localPieData = [
     { value: localCount || 0, color: "#2563EB" },
     { value: Math.max(0, totalUsers - localCount) || 1, color: "#93C5FD" }
@@ -134,43 +247,8 @@ export function DashboardClient({
     { value: Math.max(0, totalUsers - foreignersCount) || 1, color: "#A7F3D0" }
   ];
 
-  // Continuous Jan-Dec Monthly Distribution Processor for Active Users Trend
-  const activeUsersMonthlyData = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    
-    const monthlyBuckets = months.map((monthName) => ({
-      name: monthName,
-      localActive: 0,
-      foreignActive: 0,
-      totalActive: 0,
-    }));
-
-    initialUsers.forEach((user) => {
-      if (!user.last_sign_in_at) return;
-      
-      const date = new Date(user.last_sign_in_at);
-      if (date.getFullYear() === currentYear) {
-        const monthIndex = date.getMonth();
-        
-        if (monthIndex >= 0 && monthIndex < 12) {
-          if (user.origin_type === "filipino") {
-            monthlyBuckets[monthIndex].localActive += 1;
-          } else if (user.origin_type === "foreigner") {
-            monthlyBuckets[monthIndex].foreignActive += 1;
-          }
-          monthlyBuckets[monthIndex].totalActive += 1;
-        }
-      }
-    });
-
-    return monthlyBuckets;
-  }, [initialUsers]);
-
-  // Color palette for items
   const COLORS = ["#F97316", "#3B82F6", "#10B981", "#8B5CF6", "#EC4899", "#6366F1"];
 
-  // Processing Most Visited Sites
   const totalSiteVisits = mostVisitedLogs.reduce((acc, curr) => acc + curr.visit_count, 0);
   
   const sitePieChartData = mostVisitedLogs.map((log, index) => ({
@@ -180,14 +258,7 @@ export function DashboardClient({
     color: COLORS[index % COLORS.length]
   }));
 
-  // Processing Top 5 Most Saved Items with robust array defense checks
-  const topSavedItems = useMemo(() => {
-    if (!Array.isArray(mostSavedItems)) return [];
-    return [...mostSavedItems]
-      .sort((a, b) => b.save_count - a.save_count)
-      .slice(0, 5);
-  }, [mostSavedItems]);
-
+  // Map the dynamically fetched topSavedItems to the pie chart
   const totalSavesCount = topSavedItems.reduce((acc, curr) => acc + curr.save_count, 0);
 
   const savedItemsPieChartData = topSavedItems.map((item, index) => ({
@@ -197,6 +268,7 @@ export function DashboardClient({
     color: COLORS[index % COLORS.length]
   }));
 
+  // --- RENDER UI ---
   return (
     <div className="min-h-screen p-8 font-sans antialiased text-gray-950">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -208,7 +280,6 @@ export function DashboardClient({
           </p>
         </div>
           
-        {/* --- MAIN HEADER METRICS OVERVIEW DASHBOARD --- */}
         <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between pb-8 mb-2">
@@ -264,10 +335,8 @@ export function DashboardClient({
           </CardContent>
         </Card>
 
-        {/* --- RADIAL DISTRIBUTION PIE CHARTS ROW --- */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           
-          {/* Local Users PieChart */}
           <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">Local Distribution</span>
             <div className="flex flex-col items-center justify-center py-6">
@@ -303,7 +372,6 @@ export function DashboardClient({
             </div>
           </Card>
 
-          {/* Foreign Users PieChart */}
           <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">Foreign Distribution</span>
             <div className="flex flex-col items-center justify-center py-6">
@@ -340,12 +408,11 @@ export function DashboardClient({
           </Card>
         </div>
 
-        {/* --- CHRONOLOGICAL MONTHLY ACTIVE USER METRIC COMPARISON GRAPH --- */}
         <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-sm font-bold tracking-wide text-gray-900 uppercase">Active Users Trend</h3>
-              <p className="text-xs font-medium text-gray-400 mt-0.5">Monthly breakdown for the current year</p>
+              <p className="text-xs font-medium text-gray-400 mt-0.5">Monthly breakdown for the latest active year</p>
             </div>
             
             <div className="flex items-center gap-4 text-[11px] font-semibold">
@@ -361,7 +428,7 @@ export function DashboardClient({
             </div>
           </div>
           
-          <div className="flex-1 relative w-full min-h-[260px] pt-2 pl-2">
+          <div className="w-full h-[320px] mt-4 pt-2 pl-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={activeUsersMonthlyData}
@@ -422,7 +489,6 @@ export function DashboardClient({
           </div>
         </Card>
 
-        {/* --- HERITAGE SITES ACTIVITY LOG SECTION --- */}
         <div className="mt-8 space-y-4">
           <h2 className="text-2xl font-medium tracking-tight text-gray-900">Activity Log</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
@@ -458,7 +524,6 @@ export function DashboardClient({
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1 items-center">
                   
-                  {/* Left Side Labels */}
                   <ul className="space-y-3 min-w-[140px] self-start sm:self-center">
                     {sitePieChartData.length > 0 ? (
                       sitePieChartData.map((data, idx) => (
@@ -477,7 +542,6 @@ export function DashboardClient({
                     )}
                   </ul>
 
-                  {/* Right Side Donut Chart */}
                   <div className="flex-1 relative h-40 w-40 flex items-center justify-center">
                     {sitePieChartData.length > 0 ? (
                       <>
@@ -532,7 +596,6 @@ export function DashboardClient({
           </div>
         </div>
 
-        {/* --- MOST SAVED ITEMS (TOP 5) SECTION --- */}
         <div className="mt-8 space-y-4">
           <h2 className="text-2xl font-medium tracking-tight text-gray-900">Saved Performance Log</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
@@ -540,7 +603,6 @@ export function DashboardClient({
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Top 5 Names List */}
             <Card className="rounded-xl border-0 shadow-sm bg-white">
               <CardContent className="p-6">
                 <h3 className="text-xl font-medium tracking-wide text-gray-900 mb-6">Most Saved Items (Top 5)</h3>
@@ -563,18 +625,16 @@ export function DashboardClient({
                       );
                     })
                   ) : (
-                    <li className="text-sm text-gray-500">No items saved yet.</li>
+                    <li className="text-sm text-gray-500">Loading saved items...</li>
                   )}
                 </ul>
               </CardContent>
             </Card>
 
-            {/* Donut Distribution Breakdown */}
             <Card className="rounded-xl border-0 shadow-sm bg-white">
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 flex-1 items-center">
                   
-                  {/* Left Side Labels and Metrics */}
                   <ul className="space-y-3 min-w-[140px] self-start sm:self-center">
                     {savedItemsPieChartData.length > 0 ? (
                       savedItemsPieChartData.map((data, idx) => (
@@ -593,7 +653,6 @@ export function DashboardClient({
                     )}
                   </ul>
 
-                  {/* Right Side Donut Ring */}
                   <div className="flex-1 relative h-40 w-40 flex items-center justify-center">
                     {savedItemsPieChartData.length > 0 ? (
                       <>
@@ -637,7 +696,7 @@ export function DashboardClient({
                       </>
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <span className="text-xs text-gray-400">Awaiting user interaction data</span>
+                        <span className="text-xs text-gray-400">Loading data...</span>
                       </div>
                     )}
                   </div>
